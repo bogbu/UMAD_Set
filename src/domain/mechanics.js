@@ -21,12 +21,6 @@ export const initialState = {
     debuff: MechanicState.Unset,
     tsunami: MechanicState.Unset,
   },
-  settings: {
-    alwaysOnTop: true,
-    resetOnCombatEnd: true,
-    autoOpenCurrentPhase: true,
-    autoClosePreviousPhase: true,
-  },
 };
 
 export const EXDEATH_ACTIONS = {
@@ -82,7 +76,6 @@ export function normalizeState(stored) {
 
   const next = cloneState(initialState);
   next.phase = stored.phase || next.phase;
-  next.settings = { ...next.settings, ...(stored.settings || {}) };
   next.exdeath = normalizeExdeath(stored.exdeath || {});
   const storedChaos = stored.chaos || {};
   next.chaos = {
