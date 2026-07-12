@@ -53,6 +53,21 @@ export const finalCards = FINAL_CARD_PATTERNS.map((pattern) => ({
   pattern,
 }));
 
+export const EXDEATH_ACTIONS = {
+  water: {
+    [MechanicState.Circle]: '쉐어',
+    [MechanicState.Question]: '산개',
+  },
+  thunder: {
+    [MechanicState.Circle]: '산개',
+    [MechanicState.Question]: '쉐어',
+  },
+  bomb: {
+    [MechanicState.Circle]: '멈춰!',
+    [MechanicState.Question]: '움직여!',
+  },
+};
+
 export const CHAOS_ACTIONS = {
   fire: {
     [MechanicState.Circle]: '나가',
@@ -180,6 +195,12 @@ export function setExdeathMechanic(exdeath, mechanic, value) {
   next[mechanic] = state;
   if (!next.inputOrder.includes(mechanic)) next.inputOrder.push(mechanic);
   return enforceExdeathExclusivity(next);
+}
+
+export function calculateExdeathAction(mechanic, value) {
+  const state = normalizeMechanicState(value);
+  if (state === MechanicState.Unset) return '';
+  return EXDEATH_ACTIONS[mechanic] && EXDEATH_ACTIONS[mechanic][state] ? EXDEATH_ACTIONS[mechanic][state] : '';
 }
 
 export function calculateExdeathEyeActions(exdeath) {
