@@ -1,4 +1,20 @@
-import{calculateChaosAction,calculateEyeOrder,calculateFinalSafeZone,calculateKefkaAction,finalCards,initialState,phaseLabel}from'./domain/mechanics.js';import{createCombatEventSource,MockCombatEventSource}from'./services/combatEventSource.js';
+// src/domain/mechanics.js
+const initialState={phase:'exdeath',collapsed:false,exdeath:{water:'unknown',thunder:'unknown',bomb:'unknown',eyeOrder:'look-then-away'},chaos:{fire:'unknown',water:'unknown'},kefka:{thunder:'unknown',blizzard:'unknown'},settings:{alwaysOnTop:true,resetOnCombatEnd:true,autoOpenCurrentPhase:true,autoClosePreviousPhase:true}};
+const finalCards=[{id:'all-hit',label:'밖에서 다 맞아',pattern:['true','true']},{id:'line-only',label:'밖에서 직선만',pattern:['true','false']},{id:'cone-only',label:'밖에서 부채꼴만',pattern:['false','true']},{id:'dodge-all',label:'밖에서 다 피해',pattern:['false','false']}];
+function calculateEyeOrder(exdeath){return exdeath.bomb==='true'?'away-then-look':'look-then-away'}
+function calculateChaosAction(kind,value){if(value==='unknown')return'대기';return value==='true'?'나가':kind==='fire'?'안':'피하기'}
+function calculateKefkaAction(value){if(value==='unknown')return'대기';return value==='true'?'진짜':'가짜'}
+function calculateFinalSafeZone(state){const a=state.kefka.thunder,b=state.kefka.blizzard;if(a==='unknown'||b==='unknown')return null;const card=finalCards.find(c=>c.pattern[0]===a&&c.pattern[1]===b);return card?card.id:null}
+function phaseLabel(p){return{exdeath:'EXD',chaos:'CHAOS',kefka:'KEFKA',final:'FINAL'}[p]}
+
+
+// src/services/combatEventSource.js
+class MockCombatEventSource{connect(onEvent){const h=e=>onEvent(e.detail);window.addEventListener('umad:mockCombatEvent',h);return()=>window.removeEventListener('umad:mockCombatEvent',h)}static emit(event){window.dispatchEvent(new CustomEvent('umad:mockCombatEvent',{detail:event}))}}
+class ActOverlayPluginEventSource{connect(onEvent){if(!window.addOverlayListener)return()=>{};const onChangeZone=()=>onEvent({type:'CombatStarted'});const onLogLine=data=>{const line=JSON.stringify(data).toLowerCase();if(line.includes('exdeath'))onEvent({type:'PhaseChanged',phase:'exdeath'});if(line.includes('chaos'))onEvent({type:'PhaseChanged',phase:'chaos'});if(line.includes('kefka'))onEvent({type:'PhaseChanged',phase:'kefka'})};window.addOverlayListener('ChangeZone',onChangeZone);window.addOverlayListener('LogLine',onLogLine);if(window.callOverlayHandler)window.callOverlayHandler({call:'subscribe',events:['ChangeZone','LogLine']});return()=>{if(window.removeOverlayListener)window.removeOverlayListener('ChangeZone',onChangeZone);if(window.removeOverlayListener)window.removeOverlayListener('LogLine',onLogLine)}}}
+function createCombatEventSource(){return window.addOverlayListener?new ActOverlayPluginEventSource():new MockCombatEventSource()}
+
+
+// src/main.js
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
 const STORAGE_KEY='umad-p4-helper-state',phases=['exdeath','chaos','kefka','final'];let state=load(),open={exdeath:true,chaos:false,kefka:false,final:false},confirmReset=false;

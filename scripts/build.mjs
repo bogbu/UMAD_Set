@@ -1,8 +1,30 @@
-import { mkdirSync, copyFileSync, readdirSync, statSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, copyFileSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+
+const sourceFiles = [
+  'src/domain/mechanics.js',
+  'src/services/combatEventSource.js',
+  'src/main.js',
+];
+
+function toClassicScript(source, file) {
+  return source
+    .replace(/^import[^\n]+\n/gm, '')
+    .replace(/\bexport\s+(?=(?:const|let|var|function|class)\b)/g, '')
+    .trimStart();
+}
+
+function buildAppScript() {
+  return sourceFiles
+    .map((file) => `// ${file}\n${toClassicScript(readFileSync(file, 'utf8'), file)}`)
+    .join('\n\n');
+}
+
 rmSync('dist', { recursive: true, force: true });
 mkdirSync('dist', { recursive: true });
-copyFileSync('index.html', 'dist/index.html');
-function cp(src,dst){mkdirSync(dst,{recursive:true}); for(const f of readdirSync(src)){const s=join(src,f), d=join(dst,f); statSync(s).isDirectory()?cp(s,d):copyFileSync(s,d)}}
-cp('src','dist/src');
-console.log('Built static helper into dist/');
+copyFileSync('src/styles.css', 'dist/styles.css');
+writeFileSync('dist/app.js', buildAppScript());
+writeFileSync(
+  'dist/index.html',
+  '<!doctype html><html lang="ko"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>요성난무 4페이즈 도우미</title><link rel="stylesheet" href="./styles.css"></head><body><div id="app"><div id="boot-status" class="boot-status">요성난무 4P 도우미 로딩 중...</div></div><script>window.__UMAD_SHOW_BOOT_ERROR__=function(error){var root=document.getElementById(\'app\');if(!root)return;var message=error&&error.message?error.message:String(error||\'알 수 없는 오류\');root.innerHTML=\'<div class="boot-error"><h1>요성난무 도우미 실행 오류</h1><p></p><small>ACT OverlayPlugin 개발자 콘솔을 확인해주세요.</small></div>\';var p=root.querySelector(\'p\');if(p)p.textContent=message;};window.addEventListener(\'error\',function(event){window.__UMAD_SHOW_BOOT_ERROR__(event.error||event.message);});window.addEventListener(\'unhandledrejection\',function(event){window.__UMAD_SHOW_BOOT_ERROR__(event.reason);});</script><script src="./app.js"></script></body></html>\n'
+);
+console.log('Built OverlayPlugin-compatible static helper into dist/');

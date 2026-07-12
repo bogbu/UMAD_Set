@@ -3,5 +3,5 @@ export const finalCards=[{id:'all-hit',label:'밖에서 다 맞아',pattern:['tr
 export function calculateEyeOrder(exdeath){return exdeath.bomb==='true'?'away-then-look':'look-then-away'}
 export function calculateChaosAction(kind,value){if(value==='unknown')return'대기';return value==='true'?'나가':kind==='fire'?'안':'피하기'}
 export function calculateKefkaAction(value){if(value==='unknown')return'대기';return value==='true'?'진짜':'가짜'}
-export function calculateFinalSafeZone(state){const a=state.kefka.thunder,b=state.kefka.blizzard;if(a==='unknown'||b==='unknown')return null;return finalCards.find(c=>c.pattern[0]===a&&c.pattern[1]===b)?.id??null}
+export function calculateFinalSafeZone(state){const a=state.kefka.thunder,b=state.kefka.blizzard;if(a==='unknown'||b==='unknown')return null;const card=finalCards.find(c=>c.pattern[0]===a&&c.pattern[1]===b);return card?card.id:null}
 export function phaseLabel(p){return{exdeath:'EXD',chaos:'CHAOS',kefka:'KEFKA',final:'FINAL'}[p]}
