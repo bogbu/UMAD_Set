@@ -44,6 +44,11 @@ export const EXDEATH_ACTIONS = {
   },
 };
 
+export const EYE_ACTION_LABELS = {
+  look: '봐',
+  away: '보지마',
+};
+
 export const CHAOS_ACTIONS = {
   debuff: {
     [MechanicState.Circle]: '빠름',
@@ -160,6 +165,10 @@ export function calculateExdeathEyeActions(exdeath) {
 
 export function calculateEyeOrder(exdeath) {
   return calculateExdeathEyeActions(exdeath);
+}
+
+export function calculateExdeathEyeText(action) {
+  return EYE_ACTION_LABELS[action] || '원형';
 }
 
 export function calculateChaosAction(kind, value) {

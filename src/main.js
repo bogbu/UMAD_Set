@@ -1,4 +1,4 @@
-import{calculateChaosAction,calculateExdeathAction,calculateExdeathEyeActions,cloneState,initialState,MechanicState,normalizeMechanicState,normalizeState,setExdeathMechanic}from'./domain/mechanics.js';import{createCombatEventSource}from'./services/combatEventSource.js';
+import{calculateChaosAction,calculateExdeathAction,calculateExdeathEyeActions,calculateExdeathEyeText,cloneState,initialState,MechanicState,normalizeMechanicState,normalizeState,setExdeathMechanic}from'./domain/mechanics.js';import{createCombatEventSource}from'./services/combatEventSource.js';
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
 const STORAGE_KEY='umad-p4-helper-state',validPhases=['exdeath','chaos'];let state=load(),confirmReset=false;
@@ -11,7 +11,7 @@ function mark(v){const stateValue=normalizeMechanicState(v);return stateValue===
 function truth(path,value,labels){const opts=[MechanicState.Circle,MechanicState.Question];return`<div class="truth-buttons">${opts.map(v=>`<button data-set="${path}" data-value="${v}" class="${value===v?'selected':''}">${labels&&labels[v]?labels[v]:mark(v)}</button>`).join('')}</div>`}
 function orderBadge(order){return order?`<span class="order-badge" title="엑스데스 캐스팅 판정 입력 순서">${order}</span>`:''}
 function row(iconName,label,path,value,result='',order=0,labels){return`<div class="mechanic-row"><span class="mechanic-name">${icon(iconName)}${label}</span>${truth(path,value,labels)}${result||order?`<span class="result-wrap">${orderBadge(order)}${result?`<strong class="result-pill">${result}</strong>`:''}</span>`:''}</div>`}
-function eyeText(eye){const label={look:'보지마',away:'봐'};return eye?label[eye]:'원형'}
+function eyeText(eye){return calculateExdeathEyeText(eye)}
 function selectedShareAction(){return state.exdeath.water!==MechanicState.Unset?calculateExdeathAction('water',state.exdeath.water):calculateExdeathAction('thunder',state.exdeath.thunder)}
 function debuffSummary(eye){const fire=calculateChaosAction('fire',state.chaos.fire);const tsunami=calculateChaosAction('tsunami',state.chaos.tsunami);const bomb=calculateExdeathAction('bomb',state.exdeath.bomb);const debuff=calculateChaosAction('debuff',state.chaos.debuff);const share=selectedShareAction();return`<section class="debuff-summary" aria-label="디버프 전체 확인"><div class="summary-line summary-line-four"><b>${eyeText(eye[0])}</b><b>${fire}</b><b>${eyeText(eye[1])}</b><b>${tsunami}</b></div><div class="summary-line summary-line-two"><b>${bomb||'대기'}</b><b>${debuff}${share?` ${share}`:''}</b></div></section>`}
 function setPath(path,value){const [group,key]=path.split('.');if(group==='exdeath'){setState(s=>({...s,exdeath:setExdeathMechanic(s.exdeath,key,value)}));return}setState(s=>({...s,[group]:{...s[group],[key]:normalizeMechanicState(value)}}))}
