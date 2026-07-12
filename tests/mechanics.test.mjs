@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const source = await readFile(new URL('../src/domain/mechanics.js', import.meta.url), 'utf8');
 const mechanics = await import(`data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`);
-const { MechanicState: S, setExdeathMechanic, calculateExdeathEyeActions, calculateChaosAction, calculateFinalCardResults, finalResultLabels, normalizeState, initialState } = mechanics;
+const { MechanicState: S, setExdeathMechanic, calculateExdeathAction, calculateExdeathEyeActions, calculateChaosAction, calculateFinalCardResults, finalResultLabels, normalizeState, initialState } = mechanics;
 
 function exdeathWith(first, firstState, second, secondState) {
   let exdeath = { ...initialState.exdeath };
@@ -11,6 +11,14 @@ function exdeathWith(first, firstState, second, secondState) {
   exdeath = setExdeathMechanic(exdeath, second, secondState);
   return exdeath;
 }
+
+assert.equal(calculateExdeathAction('water', S.Circle), '쉐어');
+assert.equal(calculateExdeathAction('water', S.Question), '산개');
+assert.equal(calculateExdeathAction('thunder', S.Circle), '산개');
+assert.equal(calculateExdeathAction('thunder', S.Question), '쉐어');
+assert.equal(calculateExdeathAction('bomb', S.Circle), '멈춰!');
+assert.equal(calculateExdeathAction('bomb', S.Question), '움직여!');
+assert.equal(calculateExdeathAction('bomb', S.Unset), '');
 
 assert.deepEqual(calculateExdeathEyeActions(exdeathWith('thunder', S.Circle, 'bomb', S.Circle)), ['away', 'away']);
 assert.deepEqual(calculateExdeathEyeActions(exdeathWith('thunder', S.Circle, 'bomb', S.Question)), ['away', 'look']);
