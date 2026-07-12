@@ -1,4 +1,4 @@
-export const STATE_SCHEMA_VERSION = 2;
+export const STATE_SCHEMA_VERSION = 3;
 
 export const MechanicState = {
   Unset: 'unset',
@@ -18,6 +18,7 @@ export const initialState = {
   },
   chaos: {
     fire: MechanicState.Unset,
+    debuff: MechanicState.Unset,
     tsunami: MechanicState.Unset,
   },
   settings: {
@@ -44,6 +45,10 @@ export const EXDEATH_ACTIONS = {
 };
 
 export const CHAOS_ACTIONS = {
+  debuff: {
+    [MechanicState.Circle]: '빠름',
+    [MechanicState.Question]: '느림',
+  },
   fire: {
     [MechanicState.Circle]: '나가',
     [MechanicState.Question]: '그대로',
@@ -77,6 +82,7 @@ export function normalizeState(stored) {
   const storedChaos = stored.chaos || {};
   next.chaos = {
     fire: normalizeMechanicState(storedChaos.fire),
+    debuff: normalizeMechanicState(storedChaos.debuff),
     tsunami: normalizeMechanicState(storedChaos.tsunami === undefined ? storedChaos.water : storedChaos.tsunami),
   };
   return next;

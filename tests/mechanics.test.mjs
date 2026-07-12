@@ -35,6 +35,9 @@ assert.equal(exdeath.thunder, S.Unset);
 assert.equal(exdeath.water, S.Circle);
 assert.deepEqual(exdeath.inputOrder, ['bomb', 'water']);
 
+assert.equal(calculateChaosAction('debuff', S.Circle), '빠름');
+assert.equal(calculateChaosAction('debuff', S.Question), '느림');
+
 assert.equal(calculateChaosAction('fire', S.Circle), '나가');
 assert.equal(calculateChaosAction('fire', S.Question), '그대로');
 assert.equal(calculateChaosAction('tsunami', S.Circle), '그대로');
