@@ -8,17 +8,9 @@ const MechanicState = {
 };
 
 const EXDEATH_MECHANICS = ['water', 'thunder', 'bomb'];
-const FINAL_CARD_PATTERNS = [
-  [MechanicState.Circle, MechanicState.Circle],
-  [MechanicState.Circle, MechanicState.Question],
-  [MechanicState.Question, MechanicState.Circle],
-  [MechanicState.Question, MechanicState.Question],
-];
-
 const initialState = {
   schemaVersion: STATE_SCHEMA_VERSION,
   phase: 'exdeath',
-  collapsed: false,
   exdeath: {
     water: MechanicState.Unset,
     thunder: MechanicState.Unset,
@@ -29,10 +21,6 @@ const initialState = {
     fire: MechanicState.Unset,
     tsunami: MechanicState.Unset,
   },
-  kefka: {
-    thunder: MechanicState.Unset,
-    blizzard: MechanicState.Unset,
-  },
   settings: {
     alwaysOnTop: true,
     resetOnCombatEnd: true,
@@ -40,19 +28,6 @@ const initialState = {
     autoClosePreviousPhase: true,
   },
 };
-
-const finalResultLabels = {
-  'dodge-all': '다 피해',
-  'cone-only': '부채꼴만',
-  'line-only': '직선만',
-  'all-hit': '다 맞아',
-  pending: '-',
-};
-
-const finalCards = FINAL_CARD_PATTERNS.map((pattern) => ({
-  id: pattern.join('|'),
-  pattern,
-}));
 
 const EXDEATH_ACTIONS = {
   water: {
@@ -80,33 +55,6 @@ const CHAOS_ACTIONS = {
   },
 };
 
-const FINAL_CARD_RESULT_TABLE = {
-  'circle|circle': {
-    'circle|circle': 'dodge-all',
-    'circle|question': 'cone-only',
-    'question|circle': 'line-only',
-    'question|question': 'all-hit',
-  },
-  'circle|question': {
-    'circle|circle': 'cone-only',
-    'circle|question': 'dodge-all',
-    'question|circle': 'all-hit',
-    'question|question': 'line-only',
-  },
-  'question|circle': {
-    'circle|circle': 'line-only',
-    'circle|question': 'all-hit',
-    'question|circle': 'dodge-all',
-    'question|question': 'cone-only',
-  },
-  'question|question': {
-    'circle|circle': 'all-hit',
-    'circle|question': 'line-only',
-    'question|circle': 'cone-only',
-    'question|question': 'dodge-all',
-  },
-};
-
 function cloneState(value) {
   if (typeof structuredClone === 'function') return structuredClone(value);
   return JSON.parse(JSON.stringify(value));
@@ -125,18 +73,12 @@ function normalizeState(stored) {
 
   const next = cloneState(initialState);
   next.phase = stored.phase || next.phase;
-  next.collapsed = Boolean(stored.collapsed);
   next.settings = { ...next.settings, ...(stored.settings || {}) };
   next.exdeath = normalizeExdeath(stored.exdeath || {});
   const storedChaos = stored.chaos || {};
-  const storedKefka = stored.kefka || {};
   next.chaos = {
     fire: normalizeMechanicState(storedChaos.fire),
     tsunami: normalizeMechanicState(storedChaos.tsunami === undefined ? storedChaos.water : storedChaos.tsunami),
-  };
-  next.kefka = {
-    thunder: normalizeMechanicState(storedKefka.thunder),
-    blizzard: normalizeMechanicState(storedKefka.blizzard),
   };
   return next;
 }
@@ -222,32 +164,14 @@ function calculateChaosAction(kind, value) {
   return CHAOS_ACTIONS[mechanic] && CHAOS_ACTIONS[mechanic][state] ? CHAOS_ACTIONS[mechanic][state] : '대기';
 }
 
-function calculateKefkaAction(value) {
-  const state = normalizeMechanicState(value);
-  if (state === MechanicState.Unset) return '대기';
-  return state === MechanicState.Circle ? '진짜' : '가짜';
-}
-
-function calculateFinalCardResults(kefka) {
-  const source = kefka || {};
-  const thunder = normalizeMechanicState(source.thunder);
-  const blizzard = normalizeMechanicState(source.blizzard);
-  const kefkaKey = `${thunder}|${blizzard}`;
-  const resultMap = thunder === MechanicState.Unset || blizzard === MechanicState.Unset ? null : FINAL_CARD_RESULT_TABLE[kefkaKey];
-  return finalCards.map((card) => ({
-    ...card,
-    result: resultMap ? resultMap[card.id] : null,
-  }));
-}
-
 function phaseLabel(p) {
-  return { exdeath: 'EXD', chaos: 'CHAOS', kefka: 'KEFKA', final: 'FINAL' }[p];
+  return { exdeath: 'EXD', chaos: 'CHAOS' }[p];
 }
 
 
 // src/services/combatEventSource.js
 class MockCombatEventSource{connect(onEvent){const h=e=>onEvent(e.detail);window.addEventListener('umad:mockCombatEvent',h);return()=>window.removeEventListener('umad:mockCombatEvent',h)}static emit(event){window.dispatchEvent(new CustomEvent('umad:mockCombatEvent',{detail:event}))}}
-class ActOverlayPluginEventSource{connect(onEvent){if(!window.addOverlayListener)return()=>{};const onChangeZone=()=>onEvent({type:'CombatStarted'});const onLogLine=data=>{const line=JSON.stringify(data).toLowerCase();if(line.includes('exdeath'))onEvent({type:'PhaseChanged',phase:'exdeath'});if(line.includes('chaos'))onEvent({type:'PhaseChanged',phase:'chaos'});if(line.includes('kefka'))onEvent({type:'PhaseChanged',phase:'kefka'})};window.addOverlayListener('ChangeZone',onChangeZone);window.addOverlayListener('LogLine',onLogLine);if(window.callOverlayHandler)window.callOverlayHandler({call:'subscribe',events:['ChangeZone','LogLine']});return()=>{if(window.removeOverlayListener)window.removeOverlayListener('ChangeZone',onChangeZone);if(window.removeOverlayListener)window.removeOverlayListener('LogLine',onLogLine)}}}
+class ActOverlayPluginEventSource{connect(onEvent){if(!window.addOverlayListener)return()=>{};const onChangeZone=()=>onEvent({type:'CombatStarted'});const onLogLine=data=>{const line=JSON.stringify(data).toLowerCase();if(line.includes('exdeath'))onEvent({type:'PhaseChanged',phase:'exdeath'});if(line.includes('chaos'))onEvent({type:'PhaseChanged',phase:'chaos'})};window.addOverlayListener('ChangeZone',onChangeZone);window.addOverlayListener('LogLine',onLogLine);if(window.callOverlayHandler)window.callOverlayHandler({call:'subscribe',events:['ChangeZone','LogLine']});return()=>{if(window.removeOverlayListener)window.removeOverlayListener('ChangeZone',onChangeZone);if(window.removeOverlayListener)window.removeOverlayListener('LogLine',onLogLine)}}}
 function createCombatEventSource(){return window.addOverlayListener?new ActOverlayPluginEventSource():new MockCombatEventSource()}
 
 

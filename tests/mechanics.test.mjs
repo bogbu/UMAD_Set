@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const source = await readFile(new URL('../src/domain/mechanics.js', import.meta.url), 'utf8');
 const mechanics = await import(`data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`);
-const { MechanicState: S, setExdeathMechanic, calculateExdeathAction, calculateExdeathEyeActions, calculateChaosAction, calculateFinalCardResults, finalResultLabels, normalizeState, initialState } = mechanics;
+const { MechanicState: S, setExdeathMechanic, calculateExdeathAction, calculateExdeathEyeActions, calculateChaosAction, normalizeState, initialState } = mechanics;
 
 function exdeathWith(first, firstState, second, secondState) {
   let exdeath = { ...initialState.exdeath };
@@ -40,17 +40,6 @@ assert.equal(calculateChaosAction('fire', S.Question), '그대로');
 assert.equal(calculateChaosAction('tsunami', S.Circle), '그대로');
 assert.equal(calculateChaosAction('tsunami', S.Question), '나가');
 
-const cases = [
-  [S.Circle, S.Circle, ['dodge-all', 'cone-only', 'line-only', 'all-hit']],
-  [S.Circle, S.Question, ['cone-only', 'dodge-all', 'all-hit', 'line-only']],
-  [S.Question, S.Circle, ['line-only', 'all-hit', 'dodge-all', 'cone-only']],
-  [S.Question, S.Question, ['all-hit', 'line-only', 'cone-only', 'dodge-all']],
-];
-for (const [thunder, blizzard, expected] of cases) {
-  assert.deepEqual(calculateFinalCardResults({ thunder, blizzard }).map((card) => card.result), expected);
-  assert.deepEqual(calculateFinalCardResults({ thunder, blizzard }).map((card) => finalResultLabels[card.result]), expected.map((key) => finalResultLabels[key]));
-}
-assert.deepEqual(calculateFinalCardResults({ thunder: S.Circle, blizzard: S.Unset }).map((card) => card.result), [null, null, null, null]);
 assert.equal(normalizeState({ schemaVersion: 1, exdeath: { thunder: 'unknown' } }).exdeath.thunder, S.Unset);
 
 console.log('mechanics domain tests passed');
