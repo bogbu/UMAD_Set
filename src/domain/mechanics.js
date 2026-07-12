@@ -163,6 +163,3 @@ export function calculateChaosAction(kind, value) {
   return CHAOS_ACTIONS[mechanic] && CHAOS_ACTIONS[mechanic][state] ? CHAOS_ACTIONS[mechanic][state] : '대기';
 }
 
-export function phaseLabel(p) {
-  return { exdeath: 'EXD', chaos: 'CHAOS' }[p];
-}
