@@ -1,6 +1,6 @@
 import { mkdirSync, copyFileSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 
-const ASSET_VERSION = 'debuff-8';
+const ASSET_VERSION = 'debuff-9';
 
 const sourceFiles = [
   'src/domain/mechanics.js',
