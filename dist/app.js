@@ -183,7 +183,7 @@ function createCombatEventSource(){return typeof document==='undefined'?new Mock
 // src/main.js
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
-const APP_BUILD_VERSION='debuff-10';
+const APP_BUILD_VERSION='debuff-11';
 const STORAGE_KEY='umad-p4-helper-state',validPhases=['exdeath','chaos'];let state=load(),confirmReset=false,overlayLocked=false,neoExdeathDetected=false;
 console.info(`UMAD helper loaded ${APP_BUILD_VERSION}`);
 function readStoredState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved state.',error);return{}}}
