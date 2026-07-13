@@ -1,7 +1,9 @@
 import{calculateChaosAction,calculateExdeathAction,calculateExdeathEyeActions,calculateExdeathEyeText,cloneState,initialState,MechanicState,normalizeMechanicState,normalizeState,setExdeathMechanic}from'./domain/mechanics.js';import{createCombatEventSource}from'./services/combatEventSource.js';
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
+const APP_BUILD_VERSION='debuff-6';
 const STORAGE_KEY='umad-p4-helper-state',validPhases=['exdeath','chaos'];let state=load(),confirmReset=false,overlayLocked=false,neoExdeathDetected=false;
+console.info(`UMAD helper loaded ${APP_BUILD_VERSION}`);
 function readStoredState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved state.',error);return{}}}
 function load(){const loaded=normalizeState(readStoredState());if(!validPhases.includes(loaded.phase))loaded.phase='exdeath';return loaded}
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(error){console.error('Failed to save state.',error)}}
