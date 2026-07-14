@@ -4,7 +4,6 @@ const ASSET_VERSION = 'debuff-13';
 
 const sourceFiles = [
   'src/domain/mechanics.js',
-  'src/services/combatEventSource.js',
   'src/main.js',
 ];
 

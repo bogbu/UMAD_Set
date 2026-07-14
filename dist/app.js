@@ -174,94 +174,11 @@ function calculateChaosAction(kind, value) {
 
 
 
-// src/services/combatEventSource.js
-class MockCombatEventSource {
-  connect(onEvent) {
-    const handler = (event) => onEvent(event.detail);
-    window.addEventListener('umad:mockCombatEvent', handler);
-    return () => window.removeEventListener('umad:mockCombatEvent', handler);
-  }
-
-  static emit(event) {
-    window.dispatchEvent(new CustomEvent('umad:mockCombatEvent', { detail: event }));
-  }
-}
-
-class ActOverlayPluginEventSource {
-  connect(onEvent) {
-    const overlayLockPayload = (data) => (data && data.detail ? data.detail : data);
-    const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
-    const readLockState = (detail) => {
-      if (!detail || typeof detail !== 'object') return undefined;
-      if (hasOwn(detail, 'isLocked')) return !!detail.isLocked;
-      if (hasOwn(detail, 'locked')) return !!detail.locked;
-      return undefined;
-    };
-
-    let lastLocked;
-
-    const onChangeZone = () => onEvent({ type: 'CombatStarted' });
-    const onOverlayStateUpdate = (data) => {
-      const detail = overlayLockPayload(data);
-      const locked = readLockState(detail);
-      if (locked === undefined) return;
-      if (locked !== lastLocked) {
-        lastLocked = locked;
-        onEvent({ type: 'OverlayLockChanged', locked });
-      }
-    };
-    const pollOverlayState = () => {
-      if (!window.callOverlayHandler) return;
-      try {
-        const overlayState = window.callOverlayHandler({ call: 'getOverlayState' });
-        if (overlayState && overlayState.then) overlayState.then(onOverlayStateUpdate).catch(() => {});
-        else if (overlayState) onOverlayStateUpdate(overlayState);
-      } catch {}
-    };
-    const onLogLine = (data) => {
-      const line = JSON.stringify(data).toLowerCase();
-      if (line.includes('네오 엑스데스') || line.includes('neo exdeath')) onEvent({ type: 'BossDetected', boss: 'neoExdeath' });
-      if (line.includes('exdeath') || line.includes('엑스데스')) onEvent({ type: 'PhaseChanged', phase: 'exdeath' });
-      if (line.includes('chaos') || line.includes('케프카')) onEvent({ type: 'PhaseChanged', phase: 'chaos' });
-    };
-
-    if (window.addOverlayListener) {
-      window.addOverlayListener('ChangeZone', onChangeZone);
-      window.addOverlayListener('LogLine', onLogLine);
-      window.addOverlayListener('onOverlayStateUpdate', onOverlayStateUpdate);
-    }
-
-    document.addEventListener('onOverlayStateUpdate', onOverlayStateUpdate);
-    document.addEventListener('LogLine', onLogLine);
-    document.addEventListener('onLogLine', onLogLine);
-
-    if (window.callOverlayHandler) window.callOverlayHandler({ call: 'subscribe', events: ['ChangeZone', 'LogLine'] });
-
-    pollOverlayState();
-    const pollId = setInterval(pollOverlayState, 1000);
-
-    return () => {
-      clearInterval(pollId);
-      if (window.removeOverlayListener) window.removeOverlayListener('ChangeZone', onChangeZone);
-      if (window.removeOverlayListener) window.removeOverlayListener('LogLine', onLogLine);
-      if (window.removeOverlayListener) window.removeOverlayListener('onOverlayStateUpdate', onOverlayStateUpdate);
-      document.removeEventListener('onOverlayStateUpdate', onOverlayStateUpdate);
-      document.removeEventListener('LogLine', onLogLine);
-      document.removeEventListener('onLogLine', onLogLine);
-    };
-  }
-}
-
-function createCombatEventSource() {
-  return typeof document === 'undefined' ? new MockCombatEventSource() : new ActOverlayPluginEventSource();
-}
-
-
 // src/main.js
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
 const APP_BUILD_VERSION='debuff-13';
-const STORAGE_KEY='umad-p4-helper-state',validPhases=['exdeath','chaos'];let state=load(),confirmReset=false,overlayLocked=false;
+const STORAGE_KEY='umad-p4-helper-state',validPhases=['exdeath','chaos'];let state=load(),confirmReset=false;
 console.info(`UMAD helper loaded ${APP_BUILD_VERSION}`);
 function readStoredState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved state.',error);return{}}}
 function load(){const loaded=normalizeState(readStoredState());if(!validPhases.includes(loaded.phase))loaded.phase='exdeath';return loaded}
@@ -278,8 +195,6 @@ function debuffSummary(eye){const fire=calculateChaosAction('fire',state.chaos.f
 function setPath(path,value){const [group,key]=path.split('.');if(group==='exdeath'){setState(s=>({...s,exdeath:setExdeathMechanic(s.exdeath,key,value)}));return}setState(s=>({...s,[group]:{...s[group],[key]:normalizeMechanicState(value)}}))}
 function reset(){if(!confirmReset){confirmReset=true;setTimeout(()=>{confirmReset=false;render()},2500);render();return}state=cloneState(initialState);state.phase='exdeath';confirmReset=false;save();render()}
 function exdeathOrder(mechanic){const index=state.exdeath.inputOrder.indexOf(mechanic);return index===-1?0:index+1}
-function shouldShowOverlay(){return !overlayLocked}
-function render(){if(!shouldShowOverlay()){app.innerHTML='';return}const eye=calculateExdeathEyeActions(state.exdeath);const speedLabels={[MechanicState.Circle]:'빠름',[MechanicState.Question]:'느림'};app.innerHTML=`<main class="shell"><header><div><h1>절요성 4페 컨페</h1></div><button class="reset" data-reset>${icon('reset')}${confirmReset?'한 번 더':'초기화'}</button></header><section class="mechanics">${row('water','물','exdeath.water',state.exdeath.water,calculateExdeathAction('water',state.exdeath.water),exdeathOrder('water'))}${row('lightning','번개','exdeath.thunder',state.exdeath.thunder,calculateExdeathAction('thunder',state.exdeath.thunder),exdeathOrder('thunder'))}${row('bomb','폭탄','exdeath.bomb',state.exdeath.bomb,calculateExdeathAction('bomb',state.exdeath.bomb),exdeathOrder('bomb'))}${row('eye','디버프','chaos.debuff',state.chaos.debuff,calculateChaosAction('debuff',state.chaos.debuff),0,speedLabels)}<div class="phase-gap" aria-hidden="true"></div>${row('fire','화염','chaos.fire',state.chaos.fire,calculateChaosAction('fire',state.chaos.fire))}${row('water','해일','chaos.tsunami',state.chaos.tsunami,calculateChaosAction('tsunami',state.chaos.tsunami))}${debuffSummary(eye)}</section></main>`;bind()}
-function bind(){document.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>setPath(b.dataset.set,b.dataset.value));const resetButton=document.querySelector('[data-reset]');if(resetButton)resetButton.addEventListener('click',reset)/* Mock 테스트 이벤트 바인딩 비활성화: document.querySelectorAll('[data-mock]').forEach(b=>b.onclick=()=>MockCombatEventSource.emit({type:'PhaseChanged',phase:b.dataset.mock})) */}
-function connectCombatEventSource(){try{createCombatEventSource().connect(ev=>{if(ev.type==='CombatStarted'){render();return}if(ev.type==='OverlayLockChanged'){overlayLocked=ev.locked;render();return}if(ev.type==='BossDetected'&&ev.boss==='neoExdeath'){state.phase='exdeath';save();render();return}if(ev.type==='PhaseChanged'&&validPhases.includes(ev.phase)){state.phase=ev.phase;save()}})}catch(error){console.error('Failed to connect combat event source.',error)}}
-window.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key.toLowerCase()==='r')reset()});render();connectCombatEventSource();
+function render(){const eye=calculateExdeathEyeActions(state.exdeath);const speedLabels={[MechanicState.Circle]:'빠름',[MechanicState.Question]:'느림'};app.innerHTML=`<main class="shell"><header><div><h1>절요성 4페 컨페</h1></div><button class="reset" data-reset>${icon('reset')}${confirmReset?'한 번 더':'초기화'}</button></header><section class="mechanics">${row('water','물','exdeath.water',state.exdeath.water,calculateExdeathAction('water',state.exdeath.water),exdeathOrder('water'))}${row('lightning','번개','exdeath.thunder',state.exdeath.thunder,calculateExdeathAction('thunder',state.exdeath.thunder),exdeathOrder('thunder'))}${row('bomb','폭탄','exdeath.bomb',state.exdeath.bomb,calculateExdeathAction('bomb',state.exdeath.bomb),exdeathOrder('bomb'))}${row('eye','디버프','chaos.debuff',state.chaos.debuff,calculateChaosAction('debuff',state.chaos.debuff),0,speedLabels)}<div class="phase-gap" aria-hidden="true"></div>${row('fire','화염','chaos.fire',state.chaos.fire,calculateChaosAction('fire',state.chaos.fire))}${row('water','해일','chaos.tsunami',state.chaos.tsunami,calculateChaosAction('tsunami',state.chaos.tsunami))}${debuffSummary(eye)}</section></main>`;bind()}
+function bind(){document.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>setPath(b.dataset.set,b.dataset.value));const resetButton=document.querySelector('[data-reset]');if(resetButton)resetButton.addEventListener('click',reset)}
+window.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key.toLowerCase()==='r')reset()});render();
