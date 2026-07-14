@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const source = await readFile(new URL('../src/domain/mechanics.js', import.meta.url), 'utf8');
 const mechanics = await import(`data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`);
-const { MechanicState: S, setExdeathMechanic, calculateExdeathAction, calculateExdeathEyeActions, calculateExdeathEyeText, calculateChaosAction, normalizeState, initialState } = mechanics;
+const { MechanicState: S, setExdeathMechanic, calculateExdeathAction, calculateExdeathEyeActions, calculateExdeathEyeText, calculateChaosAction, normalizeState, initialState, buildPartyChatLine } = mechanics;
 
 function exdeathWith(first, firstState, second, secondState) {
   let exdeath = { ...initialState.exdeath };
@@ -45,5 +45,7 @@ assert.equal(calculateChaosAction('tsunami', S.Circle), '그대로');
 assert.equal(calculateChaosAction('tsunami', S.Question), '나가');
 
 assert.equal(normalizeState({ schemaVersion: 1, exdeath: { thunder: 'unknown' } }).exdeath.thunder, S.Unset);
+
+assert.equal(buildPartyChatLine(['봐', '나가', '보지마', '나가']), '/p 봐 > 나가 > 보지마 > 나가');
 
 console.log('mechanics domain tests passed');

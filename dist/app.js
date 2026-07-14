@@ -172,13 +172,17 @@ function calculateChaosAction(kind, value) {
   return CHAOS_ACTIONS[mechanic] && CHAOS_ACTIONS[mechanic][state] ? CHAOS_ACTIONS[mechanic][state] : '대기';
 }
 
+function buildPartyChatLine(actions) {
+  return `/p ${actions.filter(Boolean).join(' > ')}`;
+}
+
 
 
 // src/main.js
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
 const APP_BUILD_VERSION='debuff-13';
-const STORAGE_KEY='umad-p4-helper-state',validPhases=['exdeath','chaos'];let state=load(),confirmReset=false;
+const STORAGE_KEY='umad-p4-helper-state',validPhases=['exdeath','chaos'];let state=load(),confirmReset=false,copyNotice='';
 console.info(`UMAD helper loaded ${APP_BUILD_VERSION}`);
 function readStoredState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved state.',error);return{}}}
 function load(){const loaded=normalizeState(readStoredState());if(!validPhases.includes(loaded.phase))loaded.phase='exdeath';return loaded}
@@ -191,10 +195,14 @@ function orderBadge(order){return order?`<span class="order-badge" title="엑스
 function row(iconName,label,path,value,result='',order=0,labels){return`<div class="mechanic-row"><span class="mechanic-name">${icon(iconName)}${label}</span>${truth(path,value,labels)}${result||order?`<span class="result-wrap">${orderBadge(order)}${result?`<strong class="result-pill">${result}</strong>`:''}</span>`:''}</div>`}
 function eyeText(eye){return calculateExdeathEyeText(eye)}
 function selectedShareAction(){return state.exdeath.water!==MechanicState.Unset?calculateExdeathAction('water',state.exdeath.water):calculateExdeathAction('thunder',state.exdeath.thunder)}
-function debuffSummary(eye){const fire=calculateChaosAction('fire',state.chaos.fire);const tsunami=calculateChaosAction('tsunami',state.chaos.tsunami);const bomb=calculateExdeathAction('bomb',state.exdeath.bomb);const debuff=calculateChaosAction('debuff',state.chaos.debuff);const share=selectedShareAction();return`<section class="debuff-summary" aria-label="디버프 전체 확인"><div class="summary-line summary-line-four"><b>${eyeText(eye[0])}</b><b>${fire}</b><b>${eyeText(eye[1])}</b><b>${tsunami}</b></div><div class="summary-line summary-line-two"><b>${bomb||'대기'}</b><b>${debuff}${share?` ${share}`:''}</b></div></section>`}
+function partyChatLine(eye){return buildPartyChatLine([eyeText(eye[0]),calculateChaosAction('fire',state.chaos.fire),eyeText(eye[1]),calculateChaosAction('tsunami',state.chaos.tsunami)])}
+function debuffSummary(eye){const fire=calculateChaosAction('fire',state.chaos.fire);const tsunami=calculateChaosAction('tsunami',state.chaos.tsunami);const bomb=calculateExdeathAction('bomb',state.exdeath.bomb);const debuff=calculateChaosAction('debuff',state.chaos.debuff);const share=selectedShareAction();const chatLine=partyChatLine(eye);return`<button type="button" class="debuff-summary" data-copy-summary aria-label="첫 번째 줄 파티 채팅 복사: ${chatLine}" title="클릭하면 복사됩니다: ${chatLine}"><div class="summary-line summary-line-four"><b>${eyeText(eye[0])}</b><b>${fire}</b><b>${eyeText(eye[1])}</b><b>${tsunami}</b></div><div class="summary-line summary-line-two"><b>${bomb||'대기'}</b><b>${debuff}${share?` ${share}`:''}</b></div>${copyNotice?`<span class="copy-notice">${copyNotice}</span>`:''}</button>`}
 function setPath(path,value){const [group,key]=path.split('.');if(group==='exdeath'){setState(s=>({...s,exdeath:setExdeathMechanic(s.exdeath,key,value)}));return}setState(s=>({...s,[group]:{...s[group],[key]:normalizeMechanicState(value)}}))}
+async function copyText(text){if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return}const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
+function showCopyNotice(message){copyNotice=message;render();setTimeout(()=>{copyNotice='';render()},1500)}
+async function copySummary(){const eye=calculateExdeathEyeActions(state.exdeath);const text=partyChatLine(eye);try{await copyText(text);showCopyNotice('복사됨: '+text)}catch(error){console.error('Failed to copy summary.',error);showCopyNotice('복사 실패')}}
 function reset(){if(!confirmReset){confirmReset=true;setTimeout(()=>{confirmReset=false;render()},2500);render();return}state=cloneState(initialState);state.phase='exdeath';confirmReset=false;save();render()}
 function exdeathOrder(mechanic){const index=state.exdeath.inputOrder.indexOf(mechanic);return index===-1?0:index+1}
 function render(){const eye=calculateExdeathEyeActions(state.exdeath);const speedLabels={[MechanicState.Circle]:'빠름',[MechanicState.Question]:'느림'};app.innerHTML=`<main class="shell"><header><div><h1>절요성 4페 컨페</h1></div><button class="reset" data-reset>${icon('reset')}${confirmReset?'한 번 더':'초기화'}</button></header><section class="mechanics">${row('water','물','exdeath.water',state.exdeath.water,calculateExdeathAction('water',state.exdeath.water),exdeathOrder('water'))}${row('lightning','번개','exdeath.thunder',state.exdeath.thunder,calculateExdeathAction('thunder',state.exdeath.thunder),exdeathOrder('thunder'))}${row('bomb','폭탄','exdeath.bomb',state.exdeath.bomb,calculateExdeathAction('bomb',state.exdeath.bomb),exdeathOrder('bomb'))}${row('eye','디버프','chaos.debuff',state.chaos.debuff,calculateChaosAction('debuff',state.chaos.debuff),0,speedLabels)}<div class="phase-gap" aria-hidden="true"></div>${row('fire','화염','chaos.fire',state.chaos.fire,calculateChaosAction('fire',state.chaos.fire))}${row('water','해일','chaos.tsunami',state.chaos.tsunami,calculateChaosAction('tsunami',state.chaos.tsunami))}${debuffSummary(eye)}</section></main>`;bind()}
-function bind(){document.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>setPath(b.dataset.set,b.dataset.value));const resetButton=document.querySelector('[data-reset]');if(resetButton)resetButton.addEventListener('click',reset)}
+function bind(){document.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>setPath(b.dataset.set,b.dataset.value));const resetButton=document.querySelector('[data-reset]');if(resetButton)resetButton.addEventListener('click',reset);const copyButton=document.querySelector('[data-copy-summary]');if(copyButton)copyButton.addEventListener('click',copySummary)}
 window.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key.toLowerCase()==='r')reset()});render();
