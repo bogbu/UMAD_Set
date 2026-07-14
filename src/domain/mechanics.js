@@ -171,3 +171,7 @@ export function calculateChaosAction(kind, value) {
   return CHAOS_ACTIONS[mechanic] && CHAOS_ACTIONS[mechanic][state] ? CHAOS_ACTIONS[mechanic][state] : '대기';
 }
 
+export function buildPartyChatLine(actions) {
+  return `/p ${actions.filter(Boolean).join(' > ')}`;
+}
+
