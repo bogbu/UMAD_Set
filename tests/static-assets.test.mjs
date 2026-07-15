@@ -32,12 +32,12 @@ for (const symbol of requiredResizeSymbols) {
 }
 
 assert.equal(files.rootStyles.includes('panel-resize-grip'), true, 'root styles should style the resize grip');
-assert.equal(files.distIndex.includes('scroll-fix-23'), true, 'dist index should reference scroll-fix-23 assets');
+assert.equal(files.distIndex.includes('settings-24'), true, 'dist index should reference settings-24 assets');
 
 const versionedFiles = Object.entries(files).filter(([name]) => !name.toLowerCase().includes('styles'));
 
 for (const [name, content] of versionedFiles) {
-  assert.match(content, /scroll-fix-23/, `${name} should reference the current scroll-fix-23 asset version`);
+  assert.match(content, /settings-24/, `${name} should reference the current settings-24 asset version`);
   assert.equal(content.includes('resize-22'), false, `${name} should not reference stale resize-22 assets`);
   assert.equal(content.includes('resize-21'), false, `${name} should not reference stale resize-21 assets`);
   assert.equal(content.includes('resize-20'), false, `${name} should not reference stale resize-20 assets`);

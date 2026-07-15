@@ -1,5 +1,7 @@
 export const STATE_SCHEMA_VERSION = 3;
 
+export const DEFAULT_ACTION_PRESET_ID = 'current';
+
 export const MechanicState = {
   Unset: 'unset',
   Circle: 'circle',
@@ -23,40 +25,87 @@ export const initialState = {
   },
 };
 
-export const EXDEATH_ACTIONS = {
-  water: {
-    [MechanicState.Circle]: '쉐어',
-    [MechanicState.Question]: '산개',
+export const ACTION_PRESETS = {
+  current: {
+    id: 'current',
+    name: '기본',
+    exdeath: {
+      water: {
+        [MechanicState.Circle]: '쉐어',
+        [MechanicState.Question]: '산개',
+      },
+      thunder: {
+        [MechanicState.Circle]: '산개',
+        [MechanicState.Question]: '쉐어',
+      },
+      bomb: {
+        [MechanicState.Circle]: '멈춰!',
+        [MechanicState.Question]: '움직여!',
+      },
+    },
+    eye: {
+      look: '봐',
+      away: '보지마',
+    },
+    chaos: {
+      debuff: {
+        [MechanicState.Circle]: '빠름',
+        [MechanicState.Question]: '느림',
+      },
+      fire: {
+        [MechanicState.Circle]: '나가',
+        [MechanicState.Question]: '그대로',
+      },
+      tsunami: {
+        [MechanicState.Circle]: '그대로',
+        [MechanicState.Question]: '나가',
+      },
+    },
   },
-  thunder: {
-    [MechanicState.Circle]: '산개',
-    [MechanicState.Question]: '쉐어',
-  },
-  bomb: {
-    [MechanicState.Circle]: '멈춰!',
-    [MechanicState.Question]: '움직여!',
+  alternate: {
+    id: 'alternate',
+    name: '마안/기믹명',
+    exdeath: {
+      bomb: {
+        [MechanicState.Circle]: '멈춰',
+        [MechanicState.Question]: '움직여',
+      },
+    },
+    eye: {
+      look: '봐',
+      away: '보지마',
+    },
+    chaos: {
+      debuff: {
+        [MechanicState.Circle]: '산개',
+        [MechanicState.Question]: '쉐어',
+      },
+      fire: {
+        [MechanicState.Circle]: '채리엇',
+        [MechanicState.Question]: '도넛',
+      },
+      tsunami: {
+        [MechanicState.Circle]: '도넛',
+        [MechanicState.Question]: '채리엇',
+      },
+    },
   },
 };
 
-export const EYE_ACTION_LABELS = {
-  look: '봐',
-  away: '보지마',
-};
+export const EXDEATH_ACTIONS = ACTION_PRESETS.current.exdeath;
+export const EYE_ACTION_LABELS = ACTION_PRESETS.current.eye;
+export const CHAOS_ACTIONS = ACTION_PRESETS.current.chaos;
 
-export const CHAOS_ACTIONS = {
-  debuff: {
-    [MechanicState.Circle]: '빠름',
-    [MechanicState.Question]: '느림',
-  },
-  fire: {
-    [MechanicState.Circle]: '나가',
-    [MechanicState.Question]: '그대로',
-  },
-  tsunami: {
-    [MechanicState.Circle]: '그대로',
-    [MechanicState.Question]: '나가',
-  },
-};
+export function getActionPreset(id) {
+  return ACTION_PRESETS[id] || ACTION_PRESETS[DEFAULT_ACTION_PRESET_ID];
+}
+
+function presetAction(preset, section, mechanic, state) {
+  const selected = getActionPreset(preset && preset.id ? preset.id : preset);
+  return (selected[section] && selected[section][mechanic] && selected[section][mechanic][state])
+    || (ACTION_PRESETS.current[section] && ACTION_PRESETS.current[section][mechanic] && ACTION_PRESETS.current[section][mechanic][state])
+    || '';
+}
 
 export function cloneState(value) {
   if (typeof structuredClone === 'function') return structuredClone(value);
@@ -143,10 +192,10 @@ export function setExdeathMechanic(exdeath, mechanic, value) {
   return enforceExdeathExclusivity(next);
 }
 
-export function calculateExdeathAction(mechanic, value) {
+export function calculateExdeathAction(mechanic, value, preset = DEFAULT_ACTION_PRESET_ID) {
   const state = normalizeMechanicState(value);
   if (state === MechanicState.Unset) return '';
-  return EXDEATH_ACTIONS[mechanic] && EXDEATH_ACTIONS[mechanic][state] ? EXDEATH_ACTIONS[mechanic][state] : '';
+  return presetAction(preset, 'exdeath', mechanic, state);
 }
 
 export function calculateExdeathEyeActions(exdeath) {
@@ -160,15 +209,16 @@ export function calculateEyeOrder(exdeath) {
   return calculateExdeathEyeActions(exdeath);
 }
 
-export function calculateExdeathEyeText(action) {
-  return EYE_ACTION_LABELS[action] || '원형';
+export function calculateExdeathEyeText(action, preset = DEFAULT_ACTION_PRESET_ID) {
+  const selected = getActionPreset(preset);
+  return (selected.eye && selected.eye[action]) || EYE_ACTION_LABELS[action] || '원형';
 }
 
-export function calculateChaosAction(kind, value) {
+export function calculateChaosAction(kind, value, preset = DEFAULT_ACTION_PRESET_ID) {
   const mechanic = kind === 'water' ? 'tsunami' : kind;
   const state = normalizeMechanicState(value);
   if (state === MechanicState.Unset) return '대기';
-  return CHAOS_ACTIONS[mechanic] && CHAOS_ACTIONS[mechanic][state] ? CHAOS_ACTIONS[mechanic][state] : '대기';
+  return presetAction(preset, 'chaos', mechanic, state) || '대기';
 }
 
 export function buildPartyChatLine(actions) {
