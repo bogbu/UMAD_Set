@@ -346,8 +346,7 @@ export function calculateGcEyeAction(value, preset = DEFAULT_ACTION_PRESET_ID) {
 
 export function pairedGcDebuffChoices(value) {
   const debuff = normalizeDebuffChoice(value);
-  if (debuff === 'water' || debuff === 'thunder') return ['water', 'thunder'];
-  if (debuff === 'acceleration') return ['acceleration'];
+  if (debuff === 'acceleration') return ['water', 'thunder'];
   return [];
 }
 
