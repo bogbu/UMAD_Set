@@ -11,34 +11,31 @@ const files = {
   build: await readFile(new URL('../scripts/build.mjs', import.meta.url), 'utf8'),
 };
 
-const removedResizeSymbols = [
-  'resizeState',
-  'startResize',
-  'dragResize',
-  'stopResize',
-  'resize-handle',
-  'SIZE_STORAGE_KEY',
+const requiredResizeSymbols = [
+  'PANEL_STORAGE_KEY',
   'panelSize',
   'panelStyle',
-  'resizePanelTo',
-  'loadPanelSize',
-  'savePanelSize',
-  'normalizePanelSize',
-  'readStoredPanelSize',
-  '--panel-width',
-  '--panel-height',
+  'startPanelDrag',
+  'movePanelDrag',
+  'stopPanelDrag',
+  'panel-resize-grip',
+  'viewportScale',
 ];
 
-for (const [name, content] of Object.entries(files)) {
-  for (const symbol of removedResizeSymbols) {
-    assert.equal(content.includes(symbol), false, `${name} still references removed resize symbol: ${symbol}`);
-  }
+for (const symbol of requiredResizeSymbols) {
+  assert.equal(files.source.includes(symbol), true, `source should include resize behavior: ${symbol}`);
+  assert.equal(files.rootApp.includes(symbol), true, `root app should include resize behavior: ${symbol}`);
+  assert.equal(files.dist.includes(symbol), true, `dist app should include resize behavior: ${symbol}`);
 }
+
+assert.equal(files.rootStyles.includes('panel-resize-grip'), true, 'root styles should style the resize grip');
+assert.equal(files.distIndex.includes('resize-20'), true, 'dist index should reference resize-20 assets');
 
 const versionedFiles = Object.entries(files).filter(([name]) => !name.toLowerCase().includes('styles'));
 
 for (const [name, content] of versionedFiles) {
-  assert.match(content, /resize-19/, `${name} should reference the current resize-19 asset version`);
+  assert.match(content, /resize-20/, `${name} should reference the current resize-20 asset version`);
+  assert.equal(content.includes('resize-19'), false, `${name} should not reference stale resize-19 assets`);
   assert.equal(content.includes('resize-18'), false, `${name} should not reference stale resize-18 assets`);
   assert.equal(content.includes('resize-17'), false, `${name} should not reference stale resize-17 assets`);
   assert.equal(content.includes('resize-16'), false, `${name} should not reference stale resize-16 assets`);
