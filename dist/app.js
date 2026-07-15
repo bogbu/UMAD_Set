@@ -181,7 +181,7 @@ function buildPartyChatLine(actions) {
 // src/main.js
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
-const APP_BUILD_VERSION='debuff-13';
+const APP_BUILD_VERSION='debuff-14';
 const STORAGE_KEY='umad-p4-helper-state',validPhases=['exdeath','chaos'];let state=load(),confirmReset=false,copyNotice='';
 console.info(`UMAD helper loaded ${APP_BUILD_VERSION}`);
 function readStoredState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved state.',error);return{}}}
@@ -198,7 +198,7 @@ function selectedShareAction(){return state.exdeath.water!==MechanicState.Unset?
 function partyChatLine(eye){return buildPartyChatLine([eyeText(eye[0]),calculateChaosAction('fire',state.chaos.fire),eyeText(eye[1]),calculateChaosAction('tsunami',state.chaos.tsunami)])}
 function debuffSummary(eye){const fire=calculateChaosAction('fire',state.chaos.fire);const tsunami=calculateChaosAction('tsunami',state.chaos.tsunami);const bomb=calculateExdeathAction('bomb',state.exdeath.bomb);const debuff=calculateChaosAction('debuff',state.chaos.debuff);const share=selectedShareAction();const chatLine=partyChatLine(eye);return`<button type="button" class="debuff-summary" data-copy-summary aria-label="첫 번째 줄 파티 채팅 복사: ${chatLine}" title="클릭하면 복사됩니다: ${chatLine}"><div class="summary-line summary-line-four"><b>${eyeText(eye[0])}</b><b>${fire}</b><b>${eyeText(eye[1])}</b><b>${tsunami}</b></div><div class="summary-line summary-line-two"><b>${bomb||'대기'}</b><b>${debuff}${share?` ${share}`:''}</b></div>${copyNotice?`<span class="copy-notice">${copyNotice}</span>`:''}</button>`}
 function setPath(path,value){const [group,key]=path.split('.');if(group==='exdeath'){setState(s=>({...s,exdeath:setExdeathMechanic(s.exdeath,key,value)}));return}setState(s=>({...s,[group]:{...s[group],[key]:normalizeMechanicState(value)}}))}
-async function copyText(text){if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);return}const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.left='-9999px';document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
+async function copyText(text){let clipboardError=null;if(navigator.clipboard&&window.isSecureContext){try{await navigator.clipboard.writeText(text);return}catch(error){clipboardError=error}}const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.top='0';ta.style.left='0';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);const copied=document.execCommand('copy');ta.remove();if(!copied)throw clipboardError||new Error('Legacy clipboard copy command was rejected.')}
 function showCopyNotice(message){copyNotice=message;render();setTimeout(()=>{copyNotice='';render()},1500)}
 async function copySummary(){const eye=calculateExdeathEyeActions(state.exdeath);const text=partyChatLine(eye);try{await copyText(text);showCopyNotice('복사됨: '+text)}catch(error){console.error('Failed to copy summary.',error);showCopyNotice('복사 실패')}}
 function reset(){if(!confirmReset){confirmReset=true;setTimeout(()=>{confirmReset=false;render()},2500);render();return}state=cloneState(initialState);state.phase='exdeath';confirmReset=false;save();render()}
