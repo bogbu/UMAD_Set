@@ -56,12 +56,12 @@ assert.equal(calculateGcDebuffAction(S.Circle, 'acceleration', 'gcDebuff'), '멈
 assert.equal(calculateGcDebuffAction(S.Question, 'acceleration', 'gcDebuff'), '움직여!');
 assert.equal(calculateGcEyeAction(S.Circle, 'gcDebuff'), '보지마');
 assert.equal(calculateGcEyeAction(S.Question, 'gcDebuff'), '봐');
-assert.deepEqual(pairedGcDebuffChoices('water'), ['water', 'thunder']);
-assert.deepEqual(pairedGcDebuffChoices('thunder'), ['water', 'thunder']);
-assert.deepEqual(pairedGcDebuffChoices('acceleration'), ['acceleration']);
-assert.equal(pairedGcDebuffChoice('water'), 'water');
-assert.equal(pairedGcDebuffChoice('thunder'), 'water');
-assert.equal(pairedGcDebuffChoice('acceleration'), 'acceleration');
+assert.deepEqual(pairedGcDebuffChoices('water'), []);
+assert.deepEqual(pairedGcDebuffChoices('thunder'), []);
+assert.deepEqual(pairedGcDebuffChoices('acceleration'), ['water', 'thunder']);
+assert.equal(pairedGcDebuffChoice('water'), S.Unset);
+assert.equal(pairedGcDebuffChoice('thunder'), S.Unset);
+assert.equal(pairedGcDebuffChoice('acceleration'), 'water');
 assert.equal(calculateGcDebuffAction(S.Circle, S.Unset, 'gcDebuff'), '');
 
 assert.deepEqual(calculateGcDebuffSummaryActions({ custom: { gc1: S.Circle, debuff1: 'acceleration', gc2: S.Circle, debuff2: 'water' } }, 'gcDebuff'), { acceleration: '멈춰!', elemental: '쉐어' });
