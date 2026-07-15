@@ -1,16 +1,16 @@
 import{buildPartyChatLine,calculateChaosAction,calculateExdeathAction,calculateExdeathEyeActions,calculateExdeathEyeText,cloneState,initialState,MechanicState,normalizeMechanicState,normalizeState,setExdeathMechanic}from'./domain/mechanics.js';
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
-const APP_BUILD_VERSION='resize-21';
+const APP_BUILD_VERSION='resize-22';
 const STORAGE_KEY='umad-p4-helper-state',PANEL_STORAGE_KEY='umad-p4-helper-panel-size',validPhases=['exdeath','chaos'];
-const defaultPanelSize={width:620,height:520},minPanelSize={width:0,height:260};
+const overlayCanvasSize={width:600,height:600},defaultPanelSize={width:560,height:520},minPanelSize={width:0,height:260};
 let state=load(),panelSize=loadPanelSize(),confirmReset=false,copyNotice='',panelDrag=null;
 console.info(`UMAD helper loaded ${APP_BUILD_VERSION}`);
 function readStoredState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved state.',error);return{}}}
 function load(){const loaded=normalizeState(readStoredState());if(!validPhases.includes(loaded.phase))loaded.phase='exdeath';return loaded}
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(error){console.error('Failed to save state.',error)}}
 
-function clampPanelSize(size){const maxWidth=Math.max(0,window.innerWidth-20);return{width:Math.min(Math.max(Math.round(Number(size&&size.width)||defaultPanelSize.width),minPanelSize.width),maxWidth),height:Math.max(Math.round(Number(size&&size.height)||defaultPanelSize.height),minPanelSize.height)}}
+function clampPanelSize(size){const maxWidth=Math.max(0,Math.max(window.innerWidth,overlayCanvasSize.width)-20),maxHeight=Math.max(minPanelSize.height,Math.max(window.innerHeight,overlayCanvasSize.height)-20);return{width:Math.min(Math.max(Math.round(Number(size&&size.width)||defaultPanelSize.width),minPanelSize.width),maxWidth),height:Math.min(Math.max(Math.round(Number(size&&size.height)||defaultPanelSize.height),minPanelSize.height),maxHeight)}}
 function readStoredPanelSize(){try{return JSON.parse(localStorage.getItem(PANEL_STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved panel size.',error);return{}}}
 function loadPanelSize(){return clampPanelSize(readStoredPanelSize())}
 function savePanelSize(){try{localStorage.setItem(PANEL_STORAGE_KEY,JSON.stringify(panelSize))}catch(error){console.error('Failed to save panel size.',error)}}

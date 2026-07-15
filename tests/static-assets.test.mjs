@@ -20,6 +20,7 @@ const requiredResizeSymbols = [
   'stopPanelDrag',
   'panel-resize-grip',
   'viewportScale',
+  'overlayCanvasSize',
 ];
 
 for (const symbol of requiredResizeSymbols) {
@@ -29,12 +30,13 @@ for (const symbol of requiredResizeSymbols) {
 }
 
 assert.equal(files.rootStyles.includes('panel-resize-grip'), true, 'root styles should style the resize grip');
-assert.equal(files.distIndex.includes('resize-21'), true, 'dist index should reference resize-21 assets');
+assert.equal(files.distIndex.includes('resize-22'), true, 'dist index should reference resize-22 assets');
 
 const versionedFiles = Object.entries(files).filter(([name]) => !name.toLowerCase().includes('styles'));
 
 for (const [name, content] of versionedFiles) {
-  assert.match(content, /resize-21/, `${name} should reference the current resize-21 asset version`);
+  assert.match(content, /resize-22/, `${name} should reference the current resize-22 asset version`);
+  assert.equal(content.includes('resize-21'), false, `${name} should not reference stale resize-21 assets`);
   assert.equal(content.includes('resize-20'), false, `${name} should not reference stale resize-20 assets`);
   assert.equal(content.includes('resize-19'), false, `${name} should not reference stale resize-19 assets`);
   assert.equal(content.includes('resize-18'), false, `${name} should not reference stale resize-18 assets`);
