@@ -1,8 +1,8 @@
 import{buildPartyChatLine,calculateChaosAction,calculateExdeathAction,calculateExdeathEyeActions,calculateExdeathEyeText,cloneState,initialState,MechanicState,normalizeMechanicState,normalizeState,setExdeathMechanic}from'./domain/mechanics.js';
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
-const APP_BUILD_VERSION='resize-15';
-const STORAGE_KEY='umad-p4-helper-state',SIZE_STORAGE_KEY='umad-p4-helper-size',validPhases=['exdeath','chaos'];let state=load(),panelSize=loadPanelSize(),confirmReset=false,copyNotice='',resizeState=null;
+const APP_BUILD_VERSION='resize-16';
+const STORAGE_KEY='umad-p4-helper-state',validPhases=['exdeath','chaos'];let state=load(),confirmReset=false,copyNotice='';
 console.info(`UMAD helper loaded ${APP_BUILD_VERSION}`);
 function readStoredState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved state.',error);return{}}}
 function load(){const loaded=normalizeState(readStoredState());if(!validPhases.includes(loaded.phase))loaded.phase='exdeath';return loaded}
