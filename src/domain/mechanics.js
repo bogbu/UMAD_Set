@@ -1,4 +1,4 @@
-export const STATE_SCHEMA_VERSION = 3;
+export const STATE_SCHEMA_VERSION = 4;
 
 export const DEFAULT_ACTION_PRESET_ID = 'current';
 
@@ -23,6 +23,11 @@ export const initialState = {
     debuff: MechanicState.Unset,
     tsunami: MechanicState.Unset,
   },
+  custom: {
+    eye1: MechanicState.Unset,
+    eye2: MechanicState.Unset,
+    dice: MechanicState.Unset,
+  },
 };
 
 export const ACTION_PRESETS = {
@@ -46,6 +51,14 @@ export const ACTION_PRESETS = {
     eye: {
       look: '봐',
       away: '보지마',
+      eye1: {
+        [MechanicState.Circle]: '보지마',
+        [MechanicState.Question]: '봐',
+      },
+      eye2: {
+        [MechanicState.Circle]: '보지마',
+        [MechanicState.Question]: '봐',
+      },
     },
     chaos: {
       debuff: {
@@ -65,6 +78,14 @@ export const ACTION_PRESETS = {
   alternate: {
     id: 'alternate',
     name: '마안/기믹명',
+    displayRows: [
+      { icon: 'eye', label: '마안1', path: 'custom.eye1', section: 'eye', mechanic: 'eye1' },
+      { icon: 'eye', label: '마안2', path: 'custom.eye2', section: 'eye', mechanic: 'eye2' },
+      { icon: 'fire', label: '화염', path: 'chaos.fire', section: 'chaos', mechanic: 'fire' },
+      { icon: 'water', label: '해일', path: 'chaos.tsunami', section: 'chaos', mechanic: 'tsunami' },
+      { icon: 'debuff', label: '디버프', path: 'chaos.debuff', section: 'chaos', mechanic: 'debuff', buttonLabels: true, hideResult: true },
+      { icon: 'bomb', label: '주사위', path: 'custom.dice', section: 'custom', mechanic: 'dice' },
+    ],
     exdeath: {
       bomb: {
         [MechanicState.Circle]: '멈춰',
@@ -74,6 +95,14 @@ export const ACTION_PRESETS = {
     eye: {
       look: '봐',
       away: '보지마',
+      eye1: {
+        [MechanicState.Circle]: '보지마',
+        [MechanicState.Question]: '봐',
+      },
+      eye2: {
+        [MechanicState.Circle]: '보지마',
+        [MechanicState.Question]: '봐',
+      },
     },
     chaos: {
       debuff: {
@@ -87,6 +116,12 @@ export const ACTION_PRESETS = {
       tsunami: {
         [MechanicState.Circle]: '도넛',
         [MechanicState.Question]: '채리엇',
+      },
+    },
+    custom: {
+      dice: {
+        [MechanicState.Circle]: '멈춰',
+        [MechanicState.Question]: '움직여',
       },
     },
   },
@@ -131,6 +166,12 @@ export function normalizeState(stored) {
     fire: normalizeMechanicState(storedChaos.fire),
     debuff: normalizeMechanicState(storedChaos.debuff),
     tsunami: normalizeMechanicState(storedChaos.tsunami === undefined ? storedChaos.water : storedChaos.tsunami),
+  };
+  const storedCustom = stored.custom || {};
+  next.custom = {
+    eye1: normalizeMechanicState(storedCustom.eye1),
+    eye2: normalizeMechanicState(storedCustom.eye2),
+    dice: normalizeMechanicState(storedCustom.dice),
   };
   return next;
 }
@@ -219,6 +260,13 @@ export function calculateChaosAction(kind, value, preset = DEFAULT_ACTION_PRESET
   const state = normalizeMechanicState(value);
   if (state === MechanicState.Unset) return '대기';
   return presetAction(preset, 'chaos', mechanic, state) || '대기';
+}
+
+export function calculatePresetRowAction(row, value, preset = DEFAULT_ACTION_PRESET_ID) {
+  const state = normalizeMechanicState(value);
+  if (state === MechanicState.Unset) return '';
+  if (row.section === 'eye') return presetAction(preset, 'eye', row.mechanic, state);
+  return presetAction(preset, row.section, row.mechanic, state);
 }
 
 export function buildPartyChatLine(actions) {

@@ -37,13 +37,13 @@ assert.equal(files.source.includes('<select data-setting-preset>'), false, 'sour
 assert.equal(files.rootApp.includes('class="preset-option'), true, 'root app should render preset options as stable buttons');
 assert.equal(files.dist.includes('class="preset-option'), true, 'dist app should render preset options as stable buttons');
 assert.equal(files.rootStyles.includes('preset-option'), true, 'root styles should style preset option buttons');
-assert.equal(files.distIndex.includes('settings-25'), true, 'dist index should reference settings-25 assets');
+assert.equal(files.distIndex.includes('settings-26'), true, 'dist index should reference settings-26 assets');
 
 const versionedFiles = Object.entries(files).filter(([name]) => !name.toLowerCase().includes('styles'));
 
 for (const [name, content] of versionedFiles) {
-  assert.match(content, /settings-25/, `${name} should reference the current settings-25 asset version`);
-  assert.equal(content.includes('settings-24'), false, `${name} should not reference stale settings-24 assets`);
+  assert.match(content, /settings-26/, `${name} should reference the current settings-26 asset version`);
+  assert.equal(content.includes('settings-25'), false, `${name} should not reference stale settings-25 assets`);
   assert.equal(content.includes('resize-22'), false, `${name} should not reference stale resize-22 assets`);
   assert.equal(content.includes('resize-21'), false, `${name} should not reference stale resize-21 assets`);
   assert.equal(content.includes('resize-20'), false, `${name} should not reference stale resize-20 assets`);

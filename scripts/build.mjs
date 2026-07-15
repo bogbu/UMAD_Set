@@ -1,6 +1,6 @@
 import { mkdirSync, copyFileSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 
-const ASSET_VERSION = 'settings-25';
+const ASSET_VERSION = 'settings-26';
 
 const sourceFiles = [
   'src/domain/mechanics.js',
