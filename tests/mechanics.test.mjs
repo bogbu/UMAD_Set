@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const source = await readFile(new URL('../src/domain/mechanics.js', import.meta.url), 'utf8');
 const mechanics = await import(`data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`);
-const { MechanicState: S, ACTION_PRESETS, setExdeathMechanic, calculateExdeathAction, calculateExdeathEyeActions, calculateExdeathEyeText, calculateChaosAction, calculatePresetRowAction, normalizeState, initialState, buildPartyChatLine } = mechanics;
+const { MechanicState: S, ACTION_PRESETS, setExdeathMechanic, calculateExdeathAction, calculateGcDebuffAction, calculateExdeathEyeActions, calculateExdeathEyeText, calculateChaosAction, calculatePresetRowAction, normalizeState, initialState, buildPartyChatLine } = mechanics;
 
 function exdeathWith(first, firstState, second, secondState) {
   let exdeath = { ...initialState.exdeath };
@@ -45,6 +45,20 @@ assert.equal(calculateChaosAction('tsunami', S.Circle), '그대로');
 assert.equal(calculateChaosAction('tsunami', S.Question), '나가');
 
 assert.equal(normalizeState({ schemaVersion: 1, exdeath: { thunder: 'unknown' } }).exdeath.thunder, S.Unset);
+
+assert.equal(ACTION_PRESETS.gcDebuff.name, 'GC/디버프');
+assert.deepEqual(ACTION_PRESETS.gcDebuff.displayRows.map((row) => row.label), ['1GC', '디버프', '2GC', '디버프', '화염', '해일']);
+assert.equal(calculateGcDebuffAction(S.Circle, 'water', 'gcDebuff'), '쉐어');
+assert.equal(calculateGcDebuffAction(S.Question, 'water', 'gcDebuff'), '산개');
+assert.equal(calculateGcDebuffAction(S.Circle, 'thunder', 'gcDebuff'), '산개');
+assert.equal(calculateGcDebuffAction(S.Question, 'thunder', 'gcDebuff'), '쉐어');
+assert.equal(calculateGcDebuffAction(S.Circle, 'acceleration', 'gcDebuff'), '멈춰!');
+assert.equal(calculateGcDebuffAction(S.Question, 'acceleration', 'gcDebuff'), '움직여!');
+assert.equal(calculateGcDebuffAction(S.Circle, S.Unset, 'gcDebuff'), '');
+assert.equal(calculateChaosAction('fire', S.Circle, 'gcDebuff'), '나가');
+assert.equal(calculateChaosAction('fire', S.Question, 'gcDebuff'), '그대로');
+assert.equal(calculateChaosAction('tsunami', S.Circle, 'gcDebuff'), '그대로');
+assert.equal(calculateChaosAction('tsunami', S.Question, 'gcDebuff'), '나가');
 
 assert.equal(ACTION_PRESETS.alternate.name, '마안/기믹명');
 assert.equal(calculateExdeathAction('bomb', S.Circle, 'alternate'), '멈춰');

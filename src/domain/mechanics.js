@@ -1,4 +1,4 @@
-export const STATE_SCHEMA_VERSION = 4;
+export const STATE_SCHEMA_VERSION = 5;
 
 export const DEFAULT_ACTION_PRESET_ID = 'current';
 
@@ -27,6 +27,10 @@ export const initialState = {
     eye1: MechanicState.Unset,
     eye2: MechanicState.Unset,
     dice: MechanicState.Unset,
+    gc1: MechanicState.Unset,
+    gc2: MechanicState.Unset,
+    debuff1: MechanicState.Unset,
+    debuff2: MechanicState.Unset,
   },
 };
 
@@ -65,6 +69,34 @@ export const ACTION_PRESETS = {
         [MechanicState.Circle]: '빠름',
         [MechanicState.Question]: '느림',
       },
+      fire: {
+        [MechanicState.Circle]: '나가',
+        [MechanicState.Question]: '그대로',
+      },
+      tsunami: {
+        [MechanicState.Circle]: '그대로',
+        [MechanicState.Question]: '나가',
+      },
+    },
+  },
+  gcDebuff: {
+    id: 'gcDebuff',
+    name: 'GC/디버프',
+    displayRows: [
+      { icon: 'bomb', label: '1GC', path: 'custom.gc1', section: 'custom', mechanic: 'gc1', pairPath: 'custom.debuff1' },
+      { icon: 'debuff', label: '디버프', path: 'custom.debuff1', section: 'custom', mechanic: 'debuff1', options: ['water', 'thunder', 'acceleration'], optionLabels: { water: '물', thunder: '번개', acceleration: '가속도' }, hideResult: true },
+      { icon: 'bomb', label: '2GC', path: 'custom.gc2', section: 'custom', mechanic: 'gc2', pairPath: 'custom.debuff2' },
+      { icon: 'debuff', label: '디버프', path: 'custom.debuff2', section: 'custom', mechanic: 'debuff2', options: ['water', 'thunder', 'acceleration'], optionLabels: { water: '물', thunder: '번개', acceleration: '가속도' }, hideResult: true },
+      { icon: 'fire', label: '화염', path: 'chaos.fire', section: 'chaos', mechanic: 'fire' },
+      { icon: 'water', label: '해일', path: 'chaos.tsunami', section: 'chaos', mechanic: 'tsunami' },
+    ],
+    custom: {
+      gcDebuff: {
+        [MechanicState.Circle]: { water: '쉐어', thunder: '산개', acceleration: '멈춰!' },
+        [MechanicState.Question]: { water: '산개', thunder: '쉐어', acceleration: '움직여!' },
+      },
+    },
+    chaos: {
       fire: {
         [MechanicState.Circle]: '나가',
         [MechanicState.Question]: '그대로',
@@ -172,6 +204,10 @@ export function normalizeState(stored) {
     eye1: normalizeMechanicState(storedCustom.eye1),
     eye2: normalizeMechanicState(storedCustom.eye2),
     dice: normalizeMechanicState(storedCustom.dice),
+    gc1: normalizeMechanicState(storedCustom.gc1),
+    gc2: normalizeMechanicState(storedCustom.gc2),
+    debuff1: normalizeDebuffChoice(storedCustom.debuff1),
+    debuff2: normalizeDebuffChoice(storedCustom.debuff2),
   };
   return next;
 }
@@ -260,6 +296,20 @@ export function calculateChaosAction(kind, value, preset = DEFAULT_ACTION_PRESET
   const state = normalizeMechanicState(value);
   if (state === MechanicState.Unset) return '대기';
   return presetAction(preset, 'chaos', mechanic, state) || '대기';
+}
+
+export function normalizeDebuffChoice(value) {
+  return ['water', 'thunder', 'acceleration'].includes(value) ? value : MechanicState.Unset;
+}
+
+export function calculateGcDebuffAction(gcValue, debuffValue, preset = DEFAULT_ACTION_PRESET_ID) {
+  const selected = getActionPreset(preset);
+  const gcState = normalizeMechanicState(gcValue);
+  const debuffState = normalizeDebuffChoice(debuffValue);
+  if (gcState === MechanicState.Unset || debuffState === MechanicState.Unset) return '';
+  return (selected.custom && selected.custom.gcDebuff && selected.custom.gcDebuff[gcState] && selected.custom.gcDebuff[gcState][debuffState])
+    || (ACTION_PRESETS.gcDebuff.custom.gcDebuff[gcState] && ACTION_PRESETS.gcDebuff.custom.gcDebuff[gcState][debuffState])
+    || '';
 }
 
 export function calculatePresetRowAction(row, value, preset = DEFAULT_ACTION_PRESET_ID) {
