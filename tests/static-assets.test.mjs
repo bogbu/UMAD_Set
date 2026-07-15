@@ -16,6 +16,15 @@ const removedResizeSymbols = [
   'stopResize',
   'resize-handle',
   'SIZE_STORAGE_KEY',
+  'panelSize',
+  'panelStyle',
+  'resizePanelTo',
+  'loadPanelSize',
+  'savePanelSize',
+  'normalizePanelSize',
+  'readStoredPanelSize',
+  '--panel-width',
+  '--panel-height',
 ];
 
 for (const [name, content] of Object.entries(files)) {
@@ -25,7 +34,8 @@ for (const [name, content] of Object.entries(files)) {
 }
 
 for (const [name, content] of Object.entries(files)) {
-  assert.match(content, /resize-17/, `${name} should reference the current resize-17 asset version`);
+  assert.match(content, /resize-18/, `${name} should reference the current resize-18 asset version`);
+  assert.equal(content.includes('resize-17'), false, `${name} should not reference stale resize-17 assets`);
   assert.equal(content.includes('resize-16'), false, `${name} should not reference stale resize-16 assets`);
 }
 
