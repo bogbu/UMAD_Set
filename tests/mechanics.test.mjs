@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const source = await readFile(new URL('../src/domain/mechanics.js', import.meta.url), 'utf8');
 const mechanics = await import(`data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`);
-const { MechanicState: S, ACTION_PRESETS, setExdeathMechanic, calculateExdeathAction, calculateGcDebuffAction, calculateGcEyeAction, pairedGcDebuffChoice, pairedGcDebuffChoices, calculateExdeathEyeActions, calculateExdeathEyeText, calculateChaosAction, calculatePresetRowAction, normalizeState, initialState, buildPartyChatLine } = mechanics;
+const { MechanicState: S, ACTION_PRESETS, setExdeathMechanic, calculateExdeathAction, calculateGcDebuffAction, calculateGcDebuffSummaryActions, calculateGcEyeAction, pairedGcDebuffChoice, pairedGcDebuffChoices, calculateExdeathEyeActions, calculateExdeathEyeText, calculateChaosAction, calculatePresetRowAction, normalizeState, initialState, buildPartyChatLine } = mechanics;
 
 function exdeathWith(first, firstState, second, secondState) {
   let exdeath = { ...initialState.exdeath };
@@ -63,6 +63,10 @@ assert.equal(pairedGcDebuffChoice('water'), 'water');
 assert.equal(pairedGcDebuffChoice('thunder'), 'water');
 assert.equal(pairedGcDebuffChoice('acceleration'), 'acceleration');
 assert.equal(calculateGcDebuffAction(S.Circle, S.Unset, 'gcDebuff'), '');
+
+assert.deepEqual(calculateGcDebuffSummaryActions({ custom: { gc1: S.Circle, debuff1: 'acceleration', gc2: S.Circle, debuff2: 'water' } }, 'gcDebuff'), { acceleration: '멈춰!', elemental: '쉐어' });
+assert.deepEqual(calculateGcDebuffSummaryActions({ custom: { gc1: S.Question, debuff1: 'thunder', gc2: S.Question, debuff2: 'acceleration' } }, 'gcDebuff'), { acceleration: '움직여!', elemental: '쉐어' });
+assert.deepEqual(calculateGcDebuffSummaryActions({ custom: { gc1: S.Unset, debuff1: 'acceleration', gc2: S.Circle, debuff2: S.Unset } }, 'gcDebuff'), { acceleration: '', elemental: '' });
 assert.equal(calculateChaosAction('fire', S.Circle, 'gcDebuff'), '나가');
 assert.equal(calculateChaosAction('fire', S.Question, 'gcDebuff'), '그대로');
 assert.equal(calculateChaosAction('tsunami', S.Circle, 'gcDebuff'), '그대로');

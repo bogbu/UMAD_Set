@@ -319,6 +319,22 @@ export function calculatePresetRowAction(row, value, preset = DEFAULT_ACTION_PRE
   return presetAction(preset, row.section, row.mechanic, state);
 }
 
+export function calculateGcDebuffSummaryActions(state, preset = DEFAULT_ACTION_PRESET_ID) {
+  const pairs = [
+    { gc: state && state.custom && state.custom.gc1, debuff: state && state.custom && state.custom.debuff1 },
+    { gc: state && state.custom && state.custom.gc2, debuff: state && state.custom && state.custom.debuff2 },
+  ];
+  const summary = { acceleration: '', elemental: '' };
+  pairs.forEach((pair) => {
+    const debuff = normalizeDebuffChoice(pair.debuff);
+    const action = calculateGcDebuffAction(pair.gc, debuff, preset);
+    if (!action) return;
+    if (debuff === 'acceleration' && !summary.acceleration) summary.acceleration = action;
+    if ((debuff === 'water' || debuff === 'thunder') && !summary.elemental) summary.elemental = action;
+  });
+  return summary;
+}
+
 export function calculateGcEyeAction(value, preset = DEFAULT_ACTION_PRESET_ID) {
   const state = normalizeMechanicState(value);
   if (state === MechanicState.Unset) return '';
