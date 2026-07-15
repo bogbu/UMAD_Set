@@ -328,11 +328,15 @@ export function calculateGcEyeAction(value, preset = DEFAULT_ACTION_PRESET_ID) {
     || '';
 }
 
-export function pairedGcDebuffChoice(value) {
+export function pairedGcDebuffChoices(value) {
   const debuff = normalizeDebuffChoice(value);
-  if (debuff === 'water') return 'thunder';
-  if (debuff === 'thunder') return 'water';
-  return MechanicState.Unset;
+  if (debuff === 'water' || debuff === 'thunder') return ['water', 'thunder'];
+  if (debuff === 'acceleration') return ['acceleration'];
+  return [];
+}
+
+export function pairedGcDebuffChoice(value) {
+  return pairedGcDebuffChoices(value)[0] || MechanicState.Unset;
 }
 
 export function buildPartyChatLine(actions) {
