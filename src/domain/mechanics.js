@@ -1,4 +1,4 @@
-export const STATE_SCHEMA_VERSION = 5;
+export const STATE_SCHEMA_VERSION = 6;
 
 export const DEFAULT_ACTION_PRESET_ID = 'current';
 
@@ -317,6 +317,22 @@ export function calculatePresetRowAction(row, value, preset = DEFAULT_ACTION_PRE
   if (state === MechanicState.Unset) return '';
   if (row.section === 'eye') return presetAction(preset, 'eye', row.mechanic, state);
   return presetAction(preset, row.section, row.mechanic, state);
+}
+
+export function calculateGcEyeAction(value, preset = DEFAULT_ACTION_PRESET_ID) {
+  const state = normalizeMechanicState(value);
+  if (state === MechanicState.Unset) return '';
+  const selected = getActionPreset(preset);
+  return (selected.eye && selected.eye[state === MechanicState.Question ? 'look' : 'away'])
+    || EYE_ACTION_LABELS[state === MechanicState.Question ? 'look' : 'away']
+    || '';
+}
+
+export function pairedGcDebuffChoice(value) {
+  const debuff = normalizeDebuffChoice(value);
+  if (debuff === 'water') return 'thunder';
+  if (debuff === 'thunder') return 'water';
+  return MechanicState.Unset;
 }
 
 export function buildPartyChatLine(actions) {

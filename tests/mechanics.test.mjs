@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const source = await readFile(new URL('../src/domain/mechanics.js', import.meta.url), 'utf8');
 const mechanics = await import(`data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`);
-const { MechanicState: S, ACTION_PRESETS, setExdeathMechanic, calculateExdeathAction, calculateGcDebuffAction, calculateExdeathEyeActions, calculateExdeathEyeText, calculateChaosAction, calculatePresetRowAction, normalizeState, initialState, buildPartyChatLine } = mechanics;
+const { MechanicState: S, ACTION_PRESETS, setExdeathMechanic, calculateExdeathAction, calculateGcDebuffAction, calculateGcEyeAction, pairedGcDebuffChoice, calculateExdeathEyeActions, calculateExdeathEyeText, calculateChaosAction, calculatePresetRowAction, normalizeState, initialState, buildPartyChatLine } = mechanics;
 
 function exdeathWith(first, firstState, second, secondState) {
   let exdeath = { ...initialState.exdeath };
@@ -54,6 +54,11 @@ assert.equal(calculateGcDebuffAction(S.Circle, 'thunder', 'gcDebuff'), '산개')
 assert.equal(calculateGcDebuffAction(S.Question, 'thunder', 'gcDebuff'), '쉐어');
 assert.equal(calculateGcDebuffAction(S.Circle, 'acceleration', 'gcDebuff'), '멈춰!');
 assert.equal(calculateGcDebuffAction(S.Question, 'acceleration', 'gcDebuff'), '움직여!');
+assert.equal(calculateGcEyeAction(S.Circle, 'gcDebuff'), '보지마');
+assert.equal(calculateGcEyeAction(S.Question, 'gcDebuff'), '봐');
+assert.equal(pairedGcDebuffChoice('water'), 'thunder');
+assert.equal(pairedGcDebuffChoice('thunder'), 'water');
+assert.equal(pairedGcDebuffChoice('acceleration'), S.Unset);
 assert.equal(calculateGcDebuffAction(S.Circle, S.Unset, 'gcDebuff'), '');
 assert.equal(calculateChaosAction('fire', S.Circle, 'gcDebuff'), '나가');
 assert.equal(calculateChaosAction('fire', S.Question, 'gcDebuff'), '그대로');

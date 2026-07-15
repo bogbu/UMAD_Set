@@ -1,5 +1,5 @@
 // src/domain/mechanics.js
-const STATE_SCHEMA_VERSION = 5;
+const STATE_SCHEMA_VERSION = 6;
 
 const DEFAULT_ACTION_PRESET_ID = 'current';
 
@@ -320,6 +320,22 @@ function calculatePresetRowAction(row, value, preset = DEFAULT_ACTION_PRESET_ID)
   return presetAction(preset, row.section, row.mechanic, state);
 }
 
+function calculateGcEyeAction(value, preset = DEFAULT_ACTION_PRESET_ID) {
+  const state = normalizeMechanicState(value);
+  if (state === MechanicState.Unset) return '';
+  const selected = getActionPreset(preset);
+  return (selected.eye && selected.eye[state === MechanicState.Question ? 'look' : 'away'])
+    || EYE_ACTION_LABELS[state === MechanicState.Question ? 'look' : 'away']
+    || '';
+}
+
+function pairedGcDebuffChoice(value) {
+  const debuff = normalizeDebuffChoice(value);
+  if (debuff === 'water') return 'thunder';
+  if (debuff === 'thunder') return 'water';
+  return MechanicState.Unset;
+}
+
 function buildPartyChatLine(actions) {
   return `/p ${actions.filter(Boolean).join(' > ')}`;
 }
@@ -329,7 +345,7 @@ function buildPartyChatLine(actions) {
 // src/main.js
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
-const APP_BUILD_VERSION='settings-27';
+const APP_BUILD_VERSION='settings-28';
 const STORAGE_KEY='umad-p4-helper-state',PANEL_STORAGE_KEY='umad-p4-helper-panel-size',SETTINGS_STORAGE_KEY='umad-p4-helper-settings',validPhases=['exdeath','chaos'];
 const overlayCanvasSize={width:600,height:600},defaultPanelSize={width:560,height:520},minPanelSize={width:0,height:260};
 let state=load(),panelSize=loadPanelSize(),settings=loadSettings(),confirmReset=false,copyNotice='',panelDrag=null,settingsOpen=false;
@@ -359,21 +375,22 @@ function stopPanelDrag(event){if(!panelDrag||event.pointerId!==panelDrag.pointer
 function setState(next){state=typeof next==='function'?next(state):{...state,...next};save();render()}
 function icon(n){return`<span class="icon icon-${n}" aria-hidden="true"></span>`}
 function mark(v){const stateValue=normalizeMechanicState(v);return stateValue===MechanicState.Circle?'O':stateValue===MechanicState.Question?'?':'-'}
-function truth(path,value,labels,options){const opts=options||[MechanicState.Circle,MechanicState.Question];return`<div class="truth-buttons">${opts.map(v=>`<button data-set="${path}" data-value="${v}" class="${value===v?'selected':''}">${labels&&labels[v]?labels[v]:mark(v)}</button>`).join('')}</div>`}
+function truth(path,value,labels,options,buttonClasses){const opts=options||[MechanicState.Circle,MechanicState.Question];return`<div class="truth-buttons">${opts.map(v=>`<button data-set="${path}" data-value="${v}" class="${[value===v?'selected':'',buttonClasses&&buttonClasses[v]?buttonClasses[v]:''].filter(Boolean).join(' ')}">${labels&&labels[v]?labels[v]:mark(v)}</button>`).join('')}</div>`}
 function valueAtPath(path){const [group,key]=path.split('.');return state[group]&&state[group][key]}
 function presetRowLabels(row){if(row.optionLabels)return row.optionLabels;if(!row.buttonLabels)return null;const preset=selectedPreset();return{[MechanicState.Circle]:calculatePresetRowAction(row,MechanicState.Circle,preset),[MechanicState.Question]:calculatePresetRowAction(row,MechanicState.Question,preset)}}
 function orderBadge(order){return order?`<span class="order-badge" title="엑스데스 캐스팅 판정 입력 순서">${order}</span>`:''}
-function row(iconName,label,path,value,result='',order=0,labels,options){return`<div class="mechanic-row"><span class="mechanic-name">${icon(iconName)}${label}</span>${truth(path,value,labels,options)}${result||order?`<span class="result-wrap">${orderBadge(order)}${result?`<strong class="result-pill">${result}</strong>`:''}</span>`:''}</div>`}
-function presetRow(rowConfig){const value=valueAtPath(rowConfig.path);const result=rowConfig.hideResult?'':rowConfig.pairPath?calculateGcDebuffAction(value,valueAtPath(rowConfig.pairPath),selectedPreset()):calculatePresetRowAction(rowConfig,value,selectedPreset());return row(rowConfig.icon,rowConfig.label,rowConfig.path,value,result,0,presetRowLabels(rowConfig),rowConfig.options)}
+function row(iconName,label,path,value,result='',order=0,labels,options,buttonClasses){return`<div class="mechanic-row"><span class="mechanic-name">${icon(iconName)}${label}</span>${truth(path,value,labels,options,buttonClasses)}${result||order?`<span class="result-wrap">${orderBadge(order)}${result?`<strong class="result-pill">${result}</strong>`:''}</span>`:''}</div>`}
+function gcDebuffButtonClasses(rowConfig){if(rowConfig.mechanic!=='debuff2')return null;const paired=pairedGcDebuffChoice(state.custom.debuff1);return paired!==MechanicState.Unset?{[paired]:'suggested'}:null}
+function presetRow(rowConfig){const value=valueAtPath(rowConfig.path);const result=rowConfig.hideResult?'':rowConfig.pairPath?calculateGcDebuffAction(value,valueAtPath(rowConfig.pairPath),selectedPreset()):calculatePresetRowAction(rowConfig,value,selectedPreset());return row(rowConfig.icon,rowConfig.label,rowConfig.path,value,result,0,presetRowLabels(rowConfig),rowConfig.options,gcDebuffButtonClasses(rowConfig))}
 function mechanicsRows(){const preset=selectedPreset();if(Array.isArray(preset.displayRows))return preset.displayRows.map(presetRow).join('');const speedLabels={[MechanicState.Circle]:'빠름',[MechanicState.Question]:'느림'};return`${row('water','물','exdeath.water',state.exdeath.water,calculateExdeathAction('water',state.exdeath.water,preset),exdeathOrder('water'))}${row('lightning','번개','exdeath.thunder',state.exdeath.thunder,calculateExdeathAction('thunder',state.exdeath.thunder,preset),exdeathOrder('thunder'))}${row('bomb','폭탄','exdeath.bomb',state.exdeath.bomb,calculateExdeathAction('bomb',state.exdeath.bomb,preset),exdeathOrder('bomb'))}${row('eye','디버프','chaos.debuff',state.chaos.debuff,calculateChaosAction('debuff',state.chaos.debuff,preset),0,speedLabels)}<div class="phase-gap" aria-hidden="true"></div>${row('fire','화염','chaos.fire',state.chaos.fire,calculateChaosAction('fire',state.chaos.fire,preset))}${row('water','해일','chaos.tsunami',state.chaos.tsunami,calculateChaosAction('tsunami',state.chaos.tsunami,preset))}`}
 function eyeText(eye){return calculateExdeathEyeText(eye,selectedPreset())}
 function selectedShareAction(){return state.exdeath.water!==MechanicState.Unset?calculateExdeathAction('water',state.exdeath.water,selectedPreset()):calculateExdeathAction('thunder',state.exdeath.thunder,selectedPreset())}
 function summaryRowValue(mechanic){const row=Array.isArray(selectedPreset().displayRows)&&selectedPreset().displayRows.find(item=>item.mechanic===mechanic);return row?calculatePresetRowAction(row,valueAtPath(row.path),selectedPreset()):''}
-function summaryFourActions(eye){const preset=selectedPreset();if(Array.isArray(preset.displayRows)){return[summaryRowValue('eye1'),calculateChaosAction('fire',state.chaos.fire,preset),summaryRowValue('eye2'),calculateChaosAction('tsunami',state.chaos.tsunami,preset)]}return[eyeText(eye[0]),calculateChaosAction('fire',state.chaos.fire,preset),eyeText(eye[1]),calculateChaosAction('tsunami',state.chaos.tsunami,preset)]}
+function summaryFourActions(eye){const preset=selectedPreset();if(preset.id==='gcDebuff'){return[calculateGcEyeAction(state.custom.gc1,preset),calculateChaosAction('fire',state.chaos.fire,preset),calculateGcEyeAction(state.custom.gc2,preset),calculateChaosAction('tsunami',state.chaos.tsunami,preset)]}if(Array.isArray(preset.displayRows)){return[summaryRowValue('eye1'),calculateChaosAction('fire',state.chaos.fire,preset),summaryRowValue('eye2'),calculateChaosAction('tsunami',state.chaos.tsunami,preset)]}return[eyeText(eye[0]),calculateChaosAction('fire',state.chaos.fire,preset),eyeText(eye[1]),calculateChaosAction('tsunami',state.chaos.tsunami,preset)]}
 function summaryDiceAction(){return summaryRowValue('dice')||calculateExdeathAction('bomb',state.exdeath.bomb,selectedPreset())}
 function partyChatLine(eye){return buildPartyChatLine(summaryFourActions(eye))}
 function debuffSummary(eye){const actions=summaryFourActions(eye);const dice=summaryDiceAction();const debuff=calculateChaosAction('debuff',state.chaos.debuff,selectedPreset());const share=Array.isArray(selectedPreset().displayRows)?'':selectedShareAction();const chatLine=partyChatLine(eye);return`<button type="button" class="debuff-summary" data-copy-summary aria-label="첫 번째 줄 파티 채팅 복사: ${chatLine}" title="클릭하면 복사됩니다: ${chatLine}"><div class="summary-line summary-line-four">${actions.map(action=>`<b>${action||'대기'}</b>`).join('')}</div><div class="summary-line summary-line-two"><b>${dice||'대기'}</b><b>${debuff}${share?` ${share}`:''}</b></div>${copyNotice?`<span class="copy-notice">${copyNotice}</span>`:''}</button>`}
-function setPath(path,value){const [group,key]=path.split('.');const presetRow=Array.isArray(selectedPreset().displayRows)&&selectedPreset().displayRows.find(row=>row.path===path);const normalized=presetRow&&presetRow.options&&presetRow.options.includes(value)?value:normalizeMechanicState(value);if(group==='exdeath'){setState(s=>({...s,exdeath:setExdeathMechanic(s.exdeath,key,value)}));return}setState(s=>({...s,[group]:{...s[group],[key]:normalized}}))}
+function setPath(path,value){const [group,key]=path.split('.');const presetRow=Array.isArray(selectedPreset().displayRows)&&selectedPreset().displayRows.find(row=>row.path===path);const normalized=presetRow&&presetRow.options&&presetRow.options.includes(value)?value:normalizeMechanicState(value);if(group==='exdeath'){setState(s=>({...s,exdeath:setExdeathMechanic(s.exdeath,key,value)}));return}setState(s=>{const next={...s,[group]:{...s[group],[key]:normalized}};if(selectedPreset().id==='gcDebuff'&&path==='custom.debuff1'&&(normalized==='water'||normalized==='thunder'))next.custom={...next.custom,debuff2:'acceleration'};return next})}
 async function copyText(text){let clipboardError=null;if(navigator.clipboard&&window.isSecureContext){try{await navigator.clipboard.writeText(text);return}catch(error){clipboardError=error}}const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.top='0';ta.style.left='0';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);const copied=document.execCommand('copy');ta.remove();if(!copied)throw clipboardError||new Error('Legacy clipboard copy command was rejected.')}
 function showCopyNotice(message){copyNotice=message;render();setTimeout(()=>{copyNotice='';render()},1500)}
 async function copySummary(){const eye=calculateExdeathEyeActions(state.exdeath);const text=partyChatLine(eye);try{await copyText(text);showCopyNotice('복사됨')}catch(error){console.error('Failed to copy summary.',error);showCopyNotice('복사 실패')}}
