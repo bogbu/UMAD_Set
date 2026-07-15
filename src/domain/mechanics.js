@@ -121,7 +121,7 @@ export const ACTION_PRESETS = {
     custom: {
       dice: {
         [MechanicState.Circle]: '멈춰',
-        [MechanicState.Question]: '쉐어',
+        [MechanicState.Question]: '움직여',
       },
     },
   },

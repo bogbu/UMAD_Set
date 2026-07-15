@@ -59,7 +59,7 @@ assert.deepEqual(ACTION_PRESETS.alternate.displayRows.map((row) => row.label), [
 assert.equal(calculatePresetRowAction(ACTION_PRESETS.alternate.displayRows[0], S.Circle, 'alternate'), '보지마');
 assert.equal(calculatePresetRowAction(ACTION_PRESETS.alternate.displayRows[0], S.Question, 'alternate'), '봐');
 assert.equal(calculatePresetRowAction(ACTION_PRESETS.alternate.displayRows[5], S.Circle, 'alternate'), '멈춰');
-assert.equal(calculatePresetRowAction(ACTION_PRESETS.alternate.displayRows[5], S.Question, 'alternate'), '쉐어');
+assert.equal(calculatePresetRowAction(ACTION_PRESETS.alternate.displayRows[5], S.Question, 'alternate'), '움직여');
 
 assert.equal(buildPartyChatLine(['봐', '나가', '보지마', '나가']), '/p 봐 > 나가 > 보지마 > 나가');
 
