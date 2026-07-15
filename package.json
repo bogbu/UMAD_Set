@@ -2,7 +2,7 @@
   "scripts": {
     "dev": "python3 -m http.server 5173",
     "build": "node scripts/build.mjs",
-    "test": "node tests/mechanics.test.mjs"
+    "test": "node tests/mechanics.test.mjs && node tests/static-assets.test.mjs"
   },
   "dependencies": {},
   "devDependencies": {}
