@@ -190,7 +190,7 @@ function readStoredState(){try{return JSON.parse(localStorage.getItem(STORAGE_KE
 function load(){const loaded=normalizeState(readStoredState());if(!validPhases.includes(loaded.phase))loaded.phase='exdeath';return loaded}
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(error){console.error('Failed to save state.',error)}}
 
-function clampPanelSize(size){const maxWidth=Math.max(minPanelSize.width,window.innerWidth-20),maxHeight=Math.max(minPanelSize.height,window.innerHeight-20);return{width:Math.min(Math.max(Math.round(Number(size&&size.width)||defaultPanelSize.width),minPanelSize.width),maxWidth),height:Math.min(Math.max(Math.round(Number(size&&size.height)||defaultPanelSize.height),minPanelSize.height),maxHeight)}}
+function clampPanelSize(size){const maxWidth=Math.max(minPanelSize.width,window.innerWidth-20);return{width:Math.min(Math.max(Math.round(Number(size&&size.width)||defaultPanelSize.width),minPanelSize.width),maxWidth),height:Math.max(Math.round(Number(size&&size.height)||defaultPanelSize.height),minPanelSize.height)}}
 function readStoredPanelSize(){try{return JSON.parse(localStorage.getItem(PANEL_STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved panel size.',error);return{}}}
 function loadPanelSize(){return clampPanelSize(readStoredPanelSize())}
 function savePanelSize(){try{localStorage.setItem(PANEL_STORAGE_KEY,JSON.stringify(panelSize))}catch(error){console.error('Failed to save panel size.',error)}}
