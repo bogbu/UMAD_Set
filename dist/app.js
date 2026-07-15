@@ -320,6 +320,22 @@ function calculatePresetRowAction(row, value, preset = DEFAULT_ACTION_PRESET_ID)
   return presetAction(preset, row.section, row.mechanic, state);
 }
 
+function calculateGcDebuffSummaryActions(state, preset = DEFAULT_ACTION_PRESET_ID) {
+  const pairs = [
+    { gc: state && state.custom && state.custom.gc1, debuff: state && state.custom && state.custom.debuff1 },
+    { gc: state && state.custom && state.custom.gc2, debuff: state && state.custom && state.custom.debuff2 },
+  ];
+  const summary = { acceleration: '', elemental: '' };
+  pairs.forEach((pair) => {
+    const debuff = normalizeDebuffChoice(pair.debuff);
+    const action = calculateGcDebuffAction(pair.gc, debuff, preset);
+    if (!action) return;
+    if (debuff === 'acceleration' && !summary.acceleration) summary.acceleration = action;
+    if ((debuff === 'water' || debuff === 'thunder') && !summary.elemental) summary.elemental = action;
+  });
+  return summary;
+}
+
 function calculateGcEyeAction(value, preset = DEFAULT_ACTION_PRESET_ID) {
   const state = normalizeMechanicState(value);
   if (state === MechanicState.Unset) return '';
@@ -393,7 +409,8 @@ function summaryRowValue(mechanic){const row=Array.isArray(selectedPreset().disp
 function summaryFourActions(eye){const preset=selectedPreset();if(preset.id==='gcDebuff'){return[calculateGcEyeAction(state.custom.gc1,preset),calculateChaosAction('fire',state.chaos.fire,preset),calculateGcEyeAction(state.custom.gc2,preset),calculateChaosAction('tsunami',state.chaos.tsunami,preset)]}if(Array.isArray(preset.displayRows)){return[summaryRowValue('eye1'),calculateChaosAction('fire',state.chaos.fire,preset),summaryRowValue('eye2'),calculateChaosAction('tsunami',state.chaos.tsunami,preset)]}return[eyeText(eye[0]),calculateChaosAction('fire',state.chaos.fire,preset),eyeText(eye[1]),calculateChaosAction('tsunami',state.chaos.tsunami,preset)]}
 function summaryDiceAction(){return summaryRowValue('dice')||calculateExdeathAction('bomb',state.exdeath.bomb,selectedPreset())}
 function partyChatLine(eye){return buildPartyChatLine(summaryFourActions(eye))}
-function debuffSummary(eye){const actions=summaryFourActions(eye);const dice=summaryDiceAction();const debuff=calculateChaosAction('debuff',state.chaos.debuff,selectedPreset());const share=Array.isArray(selectedPreset().displayRows)?'':selectedShareAction();const chatLine=partyChatLine(eye);return`<button type="button" class="debuff-summary" data-copy-summary aria-label="첫 번째 줄 파티 채팅 복사: ${chatLine}" title="클릭하면 복사됩니다: ${chatLine}"><div class="summary-line summary-line-four">${actions.map(action=>`<b>${action||'대기'}</b>`).join('')}</div><div class="summary-line summary-line-two"><b>${dice||'대기'}</b><b>${debuff}${share?` ${share}`:''}</b></div>${copyNotice?`<span class="copy-notice">${copyNotice}</span>`:''}</button>`}
+function summaryBottomActions(){if(selectedPreset().id==='gcDebuff'){const summary=calculateGcDebuffSummaryActions(state,selectedPreset());return[summary.acceleration||'대기',summary.elemental||'대기']}const dice=summaryDiceAction();const debuff=calculateChaosAction('debuff',state.chaos.debuff,selectedPreset());const share=Array.isArray(selectedPreset().displayRows)?'':selectedShareAction();return[dice||'대기',`${debuff}${share?` ${share}`:''}`]}
+function debuffSummary(eye){const actions=summaryFourActions(eye);const bottomActions=summaryBottomActions();const chatLine=partyChatLine(eye);return`<button type="button" class="debuff-summary" data-copy-summary aria-label="첫 번째 줄 파티 채팅 복사: ${chatLine}" title="클릭하면 복사됩니다: ${chatLine}"><div class="summary-line summary-line-four">${actions.map(action=>`<b>${action||'대기'}</b>`).join('')}</div><div class="summary-line summary-line-two">${bottomActions.map(action=>`<b>${action}</b>`).join('')}</div>${copyNotice?`<span class="copy-notice">${copyNotice}</span>`:''}</button>`}
 function setPath(path,value){const [group,key]=path.split('.');const presetRow=Array.isArray(selectedPreset().displayRows)&&selectedPreset().displayRows.find(row=>row.path===path);const normalized=presetRow&&presetRow.options&&presetRow.options.includes(value)?value:normalizeMechanicState(value);if(group==='exdeath'){setState(s=>({...s,exdeath:setExdeathMechanic(s.exdeath,key,value)}));return}setState(s=>({...s,[group]:{...s[group],[key]:normalized}}))}
 async function copyText(text){let clipboardError=null;if(navigator.clipboard&&window.isSecureContext){try{await navigator.clipboard.writeText(text);return}catch(error){clipboardError=error}}const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.top='0';ta.style.left='0';ta.style.opacity='0';document.body.appendChild(ta);ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);const copied=document.execCommand('copy');ta.remove();if(!copied)throw clipboardError||new Error('Legacy clipboard copy command was rejected.')}
 function showCopyNotice(message){copyNotice=message;render();setTimeout(()=>{copyNotice='';render()},1500)}
