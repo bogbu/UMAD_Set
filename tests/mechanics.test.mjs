@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 const source = await readFile(new URL('../src/domain/mechanics.js', import.meta.url), 'utf8');
 const mechanics = await import(`data:text/javascript;charset=utf-8,${encodeURIComponent(source)}`);
-const { MechanicState: S, ACTION_PRESETS, setExdeathMechanic, calculateExdeathAction, calculateExdeathEyeActions, calculateExdeathEyeText, calculateChaosAction, normalizeState, initialState, buildPartyChatLine } = mechanics;
+const { MechanicState: S, ACTION_PRESETS, setExdeathMechanic, calculateExdeathAction, calculateExdeathEyeActions, calculateExdeathEyeText, calculateChaosAction, calculatePresetRowAction, normalizeState, initialState, buildPartyChatLine } = mechanics;
 
 function exdeathWith(first, firstState, second, secondState) {
   let exdeath = { ...initialState.exdeath };
@@ -55,6 +55,11 @@ assert.equal(calculateChaosAction('tsunami', S.Circle, 'alternate'), '도넛');
 assert.equal(calculateChaosAction('tsunami', S.Question, 'alternate'), '채리엇');
 assert.equal(calculateChaosAction('debuff', S.Circle, 'alternate'), '산개');
 assert.equal(calculateChaosAction('debuff', S.Question, 'alternate'), '쉐어');
+assert.deepEqual(ACTION_PRESETS.alternate.displayRows.map((row) => row.label), ['마안1', '마안2', '화염', '해일', '디버프', '주사위']);
+assert.equal(calculatePresetRowAction(ACTION_PRESETS.alternate.displayRows[0], S.Circle, 'alternate'), '보지마');
+assert.equal(calculatePresetRowAction(ACTION_PRESETS.alternate.displayRows[0], S.Question, 'alternate'), '봐');
+assert.equal(calculatePresetRowAction(ACTION_PRESETS.alternate.displayRows[5], S.Circle, 'alternate'), '멈춰');
+assert.equal(calculatePresetRowAction(ACTION_PRESETS.alternate.displayRows[5], S.Question, 'alternate'), '움직여');
 
 assert.equal(buildPartyChatLine(['봐', '나가', '보지마', '나가']), '/p 봐 > 나가 > 보지마 > 나가');
 

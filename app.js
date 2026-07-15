@@ -1,5 +1,5 @@
 // src/domain/mechanics.js
-const STATE_SCHEMA_VERSION = 3;
+const STATE_SCHEMA_VERSION = 4;
 
 const DEFAULT_ACTION_PRESET_ID = 'current';
 
@@ -24,6 +24,11 @@ const initialState = {
     debuff: MechanicState.Unset,
     tsunami: MechanicState.Unset,
   },
+  custom: {
+    eye1: MechanicState.Unset,
+    eye2: MechanicState.Unset,
+    dice: MechanicState.Unset,
+  },
 };
 
 const ACTION_PRESETS = {
@@ -47,6 +52,14 @@ const ACTION_PRESETS = {
     eye: {
       look: '봐',
       away: '보지마',
+      eye1: {
+        [MechanicState.Circle]: '보지마',
+        [MechanicState.Question]: '봐',
+      },
+      eye2: {
+        [MechanicState.Circle]: '보지마',
+        [MechanicState.Question]: '봐',
+      },
     },
     chaos: {
       debuff: {
@@ -66,6 +79,14 @@ const ACTION_PRESETS = {
   alternate: {
     id: 'alternate',
     name: '마안/기믹명',
+    displayRows: [
+      { icon: 'eye', label: '마안1', path: 'custom.eye1', section: 'eye', mechanic: 'eye1' },
+      { icon: 'eye', label: '마안2', path: 'custom.eye2', section: 'eye', mechanic: 'eye2' },
+      { icon: 'fire', label: '화염', path: 'chaos.fire', section: 'chaos', mechanic: 'fire' },
+      { icon: 'water', label: '해일', path: 'chaos.tsunami', section: 'chaos', mechanic: 'tsunami' },
+      { icon: 'debuff', label: '디버프', path: 'chaos.debuff', section: 'chaos', mechanic: 'debuff', buttonLabels: true, hideResult: true },
+      { icon: 'bomb', label: '주사위', path: 'custom.dice', section: 'custom', mechanic: 'dice' },
+    ],
     exdeath: {
       bomb: {
         [MechanicState.Circle]: '멈춰',
@@ -75,6 +96,14 @@ const ACTION_PRESETS = {
     eye: {
       look: '봐',
       away: '보지마',
+      eye1: {
+        [MechanicState.Circle]: '보지마',
+        [MechanicState.Question]: '봐',
+      },
+      eye2: {
+        [MechanicState.Circle]: '보지마',
+        [MechanicState.Question]: '봐',
+      },
     },
     chaos: {
       debuff: {
@@ -88,6 +117,12 @@ const ACTION_PRESETS = {
       tsunami: {
         [MechanicState.Circle]: '도넛',
         [MechanicState.Question]: '채리엇',
+      },
+    },
+    custom: {
+      dice: {
+        [MechanicState.Circle]: '멈춰',
+        [MechanicState.Question]: '움직여',
       },
     },
   },
@@ -132,6 +167,12 @@ function normalizeState(stored) {
     fire: normalizeMechanicState(storedChaos.fire),
     debuff: normalizeMechanicState(storedChaos.debuff),
     tsunami: normalizeMechanicState(storedChaos.tsunami === undefined ? storedChaos.water : storedChaos.tsunami),
+  };
+  const storedCustom = stored.custom || {};
+  next.custom = {
+    eye1: normalizeMechanicState(storedCustom.eye1),
+    eye2: normalizeMechanicState(storedCustom.eye2),
+    dice: normalizeMechanicState(storedCustom.dice),
   };
   return next;
 }
@@ -222,6 +263,13 @@ function calculateChaosAction(kind, value, preset = DEFAULT_ACTION_PRESET_ID) {
   return presetAction(preset, 'chaos', mechanic, state) || '대기';
 }
 
+function calculatePresetRowAction(row, value, preset = DEFAULT_ACTION_PRESET_ID) {
+  const state = normalizeMechanicState(value);
+  if (state === MechanicState.Unset) return '';
+  if (row.section === 'eye') return presetAction(preset, 'eye', row.mechanic, state);
+  return presetAction(preset, row.section, row.mechanic, state);
+}
+
 function buildPartyChatLine(actions) {
   return `/p ${actions.filter(Boolean).join(' > ')}`;
 }
@@ -231,7 +279,7 @@ function buildPartyChatLine(actions) {
 // src/main.js
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
-const APP_BUILD_VERSION='settings-25';
+const APP_BUILD_VERSION='settings-26';
 const STORAGE_KEY='umad-p4-helper-state',PANEL_STORAGE_KEY='umad-p4-helper-panel-size',SETTINGS_STORAGE_KEY='umad-p4-helper-settings',validPhases=['exdeath','chaos'];
 const overlayCanvasSize={width:600,height:600},defaultPanelSize={width:560,height:520},minPanelSize={width:0,height:260};
 let state=load(),panelSize=loadPanelSize(),settings=loadSettings(),confirmReset=false,copyNotice='',panelDrag=null,settingsOpen=false;
@@ -262,8 +310,12 @@ function setState(next){state=typeof next==='function'?next(state):{...state,...
 function icon(n){return`<span class="icon icon-${n}" aria-hidden="true"></span>`}
 function mark(v){const stateValue=normalizeMechanicState(v);return stateValue===MechanicState.Circle?'O':stateValue===MechanicState.Question?'?':'-'}
 function truth(path,value,labels){const opts=[MechanicState.Circle,MechanicState.Question];return`<div class="truth-buttons">${opts.map(v=>`<button data-set="${path}" data-value="${v}" class="${value===v?'selected':''}">${labels&&labels[v]?labels[v]:mark(v)}</button>`).join('')}</div>`}
+function valueAtPath(path){const [group,key]=path.split('.');return state[group]&&state[group][key]}
+function presetRowLabels(row){if(!row.buttonLabels)return null;const preset=selectedPreset();return{[MechanicState.Circle]:calculatePresetRowAction(row,MechanicState.Circle,preset),[MechanicState.Question]:calculatePresetRowAction(row,MechanicState.Question,preset)}}
 function orderBadge(order){return order?`<span class="order-badge" title="엑스데스 캐스팅 판정 입력 순서">${order}</span>`:''}
 function row(iconName,label,path,value,result='',order=0,labels){return`<div class="mechanic-row"><span class="mechanic-name">${icon(iconName)}${label}</span>${truth(path,value,labels)}${result||order?`<span class="result-wrap">${orderBadge(order)}${result?`<strong class="result-pill">${result}</strong>`:''}</span>`:''}</div>`}
+function presetRow(rowConfig){const value=valueAtPath(rowConfig.path);const result=rowConfig.hideResult?'':calculatePresetRowAction(rowConfig,value,selectedPreset());return row(rowConfig.icon,rowConfig.label,rowConfig.path,value,result,0,presetRowLabels(rowConfig))}
+function mechanicsRows(){const preset=selectedPreset();if(Array.isArray(preset.displayRows))return preset.displayRows.map(presetRow).join('');const speedLabels={[MechanicState.Circle]:'빠름',[MechanicState.Question]:'느림'};return`${row('water','물','exdeath.water',state.exdeath.water,calculateExdeathAction('water',state.exdeath.water,preset),exdeathOrder('water'))}${row('lightning','번개','exdeath.thunder',state.exdeath.thunder,calculateExdeathAction('thunder',state.exdeath.thunder,preset),exdeathOrder('thunder'))}${row('bomb','폭탄','exdeath.bomb',state.exdeath.bomb,calculateExdeathAction('bomb',state.exdeath.bomb,preset),exdeathOrder('bomb'))}${row('eye','디버프','chaos.debuff',state.chaos.debuff,calculateChaosAction('debuff',state.chaos.debuff,preset),0,speedLabels)}<div class="phase-gap" aria-hidden="true"></div>${row('fire','화염','chaos.fire',state.chaos.fire,calculateChaosAction('fire',state.chaos.fire,preset))}${row('water','해일','chaos.tsunami',state.chaos.tsunami,calculateChaosAction('tsunami',state.chaos.tsunami,preset))}`}
 function eyeText(eye){return calculateExdeathEyeText(eye,selectedPreset())}
 function selectedShareAction(){return state.exdeath.water!==MechanicState.Unset?calculateExdeathAction('water',state.exdeath.water,selectedPreset()):calculateExdeathAction('thunder',state.exdeath.thunder,selectedPreset())}
 function partyChatLine(eye){return buildPartyChatLine([eyeText(eye[0]),calculateChaosAction('fire',state.chaos.fire,selectedPreset()),eyeText(eye[1]),calculateChaosAction('tsunami',state.chaos.tsunami,selectedPreset())])}
@@ -278,6 +330,6 @@ function readShellScroll(){const shell=app.querySelector('.shell');return shell?
 function restoreShellScroll(scroll){if(!scroll)return;const shell=app.querySelector('.shell');if(!shell)return;shell.scrollLeft=scroll.left;shell.scrollTop=scroll.top}
 
 function settingsPanel(){const presets=Object.values(ACTION_PRESETS);return`<div class="settings-popover" ${settingsOpen?'':'hidden'}><fieldset class="preset-options"><legend>리스트 설정</legend>${presets.map(p=>`<button type="button" class="preset-option ${settings.presetId===p.id?'selected':''}" data-setting-preset="${p.id}" aria-pressed="${settings.presetId===p.id?'true':'false'}">${p.name}</button>`).join('')}</fieldset><label>오퍼시티 <span>${Math.round(settings.opacity*100)}%</span><input type="range" min="20" max="100" step="5" value="${Math.round(settings.opacity*100)}" data-setting-opacity></label></div>`}
-function render(){const shellScroll=readShellScroll();const eye=calculateExdeathEyeActions(state.exdeath);const speedLabels={[MechanicState.Circle]:'빠름',[MechanicState.Question]:'느림'};app.innerHTML=`<main class="shell" ${panelStyle()}><header><div><h1>절요성 4페 컨페</h1></div><div class="header-actions"><button class="reset" data-reset>${icon('reset')}${confirmReset?'한 번 더':'초기화'}</button><button class="settings-toggle" data-settings-toggle aria-label="설정" title="설정">⚙️</button></div>${settingsPanel()}</header><section class="mechanics">${row('water','물','exdeath.water',state.exdeath.water,calculateExdeathAction('water',state.exdeath.water,selectedPreset()),exdeathOrder('water'))}${row('lightning','번개','exdeath.thunder',state.exdeath.thunder,calculateExdeathAction('thunder',state.exdeath.thunder,selectedPreset()),exdeathOrder('thunder'))}${row('bomb','폭탄','exdeath.bomb',state.exdeath.bomb,calculateExdeathAction('bomb',state.exdeath.bomb,selectedPreset()),exdeathOrder('bomb'))}${row('eye','디버프','chaos.debuff',state.chaos.debuff,calculateChaosAction('debuff',state.chaos.debuff,selectedPreset()),0,speedLabels)}<div class="phase-gap" aria-hidden="true"></div>${row('fire','화염','chaos.fire',state.chaos.fire,calculateChaosAction('fire',state.chaos.fire,selectedPreset()))}${row('water','해일','chaos.tsunami',state.chaos.tsunami,calculateChaosAction('tsunami',state.chaos.tsunami,selectedPreset()))}${debuffSummary(eye)}</section><button type="button" class="panel-resize-grip" aria-label="패널 크기 조절" title="오른쪽 아래를 드래그해서 가로/세로 크기 조절"></button></main>`;restoreShellScroll(shellScroll);bind()}
+function render(){const shellScroll=readShellScroll();const eye=calculateExdeathEyeActions(state.exdeath);app.innerHTML=`<main class="shell" ${panelStyle()}><header><div><h1>절요성 4페 컨페</h1></div><div class="header-actions"><button class="reset" data-reset>${icon('reset')}${confirmReset?'한 번 더':'초기화'}</button><button class="settings-toggle" data-settings-toggle aria-label="설정" title="설정">⚙️</button></div>${settingsPanel()}</header><section class="mechanics">${mechanicsRows()}${debuffSummary(eye)}</section><button type="button" class="panel-resize-grip" aria-label="패널 크기 조절" title="오른쪽 아래를 드래그해서 가로/세로 크기 조절"></button></main>`;restoreShellScroll(shellScroll);bind()}
 function bind(){document.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>setPath(b.dataset.set,b.dataset.value));const resetButton=document.querySelector('[data-reset]');if(resetButton)resetButton.addEventListener('click',reset);const copyButton=document.querySelector('[data-copy-summary]');if(copyButton)copyButton.addEventListener('click',copySummary);const settingsButton=document.querySelector('[data-settings-toggle]');if(settingsButton)settingsButton.addEventListener('click',()=>{settingsOpen=!settingsOpen;render()});document.querySelectorAll('[data-setting-preset]').forEach(button=>button.addEventListener('click',()=>setSettings({presetId:button.dataset.settingPreset})));const opacityInput=document.querySelector('[data-setting-opacity]');if(opacityInput)opacityInput.addEventListener('input',()=>setSettings({opacity:Number(opacityInput.value)/100}));const grip=document.querySelector('.panel-resize-grip');if(grip)grip.addEventListener('pointerdown',startPanelDrag)}
 window.addEventListener('pointermove',movePanelDrag);window.addEventListener('pointerup',stopPanelDrag);window.addEventListener('pointercancel',stopPanelDrag);window.addEventListener('blur',()=>{panelDrag=null;document.body.classList.remove('resizing-panel')});window.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key.toLowerCase()==='r')reset()});window.addEventListener('resize',()=>setPanelSize(panelSize));render();
