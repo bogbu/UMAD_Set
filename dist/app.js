@@ -364,9 +364,9 @@ function buildPartyChatLine(actions) {
 // src/main.js
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
-const APP_BUILD_VERSION='settings-28';
+const APP_BUILD_VERSION='settings-29';
 const STORAGE_KEY='umad-p4-helper-state',PANEL_STORAGE_KEY='umad-p4-helper-panel-size',SETTINGS_STORAGE_KEY='umad-p4-helper-settings',validPhases=['exdeath','chaos'];
-const overlayCanvasSize={width:600,height:600},defaultPanelSize={width:560,height:520},minPanelSize={width:0,height:260};
+const overlayCanvasSize={width:700,height:800},defaultPanelSize={width:660,height:720},minPanelSize={width:0,height:260};
 let state=load(),panelSize=loadPanelSize(),settings=loadSettings(),confirmReset=false,copyNotice='',panelDrag=null,settingsOpen=false;
 console.info(`UMAD helper loaded ${APP_BUILD_VERSION}`);
 function readStoredState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved state.',error);return{}}}
