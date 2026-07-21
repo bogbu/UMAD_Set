@@ -8,6 +8,7 @@ const files = {
   index: await readFile(new URL('../index.html', import.meta.url), 'utf8'),
   rootStyles: await readFile(new URL('../styles.css', import.meta.url), 'utf8'),
   distIndex: await readFile(new URL('../dist/index.html', import.meta.url), 'utf8'),
+  distStyles: await readFile(new URL('../dist/styles.css', import.meta.url), 'utf8'),
   build: await readFile(new URL('../scripts/build.mjs', import.meta.url), 'utf8'),
 };
 
@@ -38,6 +39,21 @@ assert.equal(files.rootApp.includes('class="preset-option'), true, 'root app sho
 assert.equal(files.dist.includes('class="preset-option'), true, 'dist app should render preset options as stable buttons');
 assert.equal(files.rootStyles.includes('preset-option'), true, 'root styles should style preset option buttons');
 assert.equal(files.distIndex.includes('settings-28'), true, 'dist index should reference settings-28 assets');
+
+
+const requiredActionStyleSymbols = [
+  'actionTone',
+  'result-danger',
+  'result-safe',
+  'summary-action-danger',
+  'summary-action-safe',
+];
+
+for (const symbol of requiredActionStyleSymbols) {
+  assert.equal(files.source.includes(symbol) || files.rootStyles.includes(symbol), true, `source assets should include action color styling: ${symbol}`);
+  assert.equal(files.rootApp.includes(symbol) || files.rootStyles.includes(symbol), true, `root assets should include action color styling: ${symbol}`);
+  assert.equal(files.dist.includes(symbol) || files.distStyles.includes(symbol), true, `dist assets should include action color styling: ${symbol}`);
+}
 
 const versionedFiles = Object.entries(files).filter(([name]) => !name.toLowerCase().includes('styles'));
 
