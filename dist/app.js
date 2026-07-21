@@ -364,9 +364,9 @@ function buildPartyChatLine(actions) {
 // src/main.js
 const app=document.getElementById('app');
 if(!app)throw new Error('App root element was not found.');
-const APP_BUILD_VERSION='settings-28';
+const APP_BUILD_VERSION='settings-30';
 const STORAGE_KEY='umad-p4-helper-state',PANEL_STORAGE_KEY='umad-p4-helper-panel-size',SETTINGS_STORAGE_KEY='umad-p4-helper-settings',validPhases=['exdeath','chaos'];
-const overlayCanvasSize={width:600,height:600},defaultPanelSize={width:560,height:520},minPanelSize={width:0,height:260};
+const overlayCanvasSize={width:700,height:800},defaultPanelSize={width:660,height:720},minPanelSize={width:0,height:260};
 let state=load(),panelSize=loadPanelSize(),settings=loadSettings(),confirmReset=false,copyNotice='',panelDrag=null,settingsOpen=false;
 console.info(`UMAD helper loaded ${APP_BUILD_VERSION}`);
 function readStoredState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved state.',error);return{}}}
@@ -381,7 +381,8 @@ function selectedPreset(){return ACTION_PRESETS[settings.presetId]||ACTION_PRESE
 function load(){const loaded=normalizeState(readStoredState());if(!validPhases.includes(loaded.phase))loaded.phase='exdeath';return loaded}
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(error){console.error('Failed to save state.',error)}}
 
-function clampPanelSize(size){const maxWidth=Math.max(0,Math.max(window.innerWidth,overlayCanvasSize.width)-20),maxHeight=Math.max(minPanelSize.height,Math.max(window.innerHeight,overlayCanvasSize.height)-20);return{width:Math.min(Math.max(Math.round(Number(size&&size.width)||defaultPanelSize.width),minPanelSize.width),maxWidth),height:Math.min(Math.max(Math.round(Number(size&&size.height)||defaultPanelSize.height),minPanelSize.height),maxHeight)}}
+function availableOverlaySize(){const viewportWidth=window.innerWidth||overlayCanvasSize.width,viewportHeight=window.innerHeight||overlayCanvasSize.height;return{width:Math.min(viewportWidth,overlayCanvasSize.width),height:Math.min(viewportHeight,overlayCanvasSize.height)}}
+function clampPanelSize(size){const available=availableOverlaySize(),maxWidth=Math.max(0,available.width-20),maxHeight=Math.max(minPanelSize.height,available.height-20);return{width:Math.min(Math.max(Math.round(Number(size&&size.width)||defaultPanelSize.width),minPanelSize.width),maxWidth),height:Math.min(Math.max(Math.round(Number(size&&size.height)||defaultPanelSize.height),minPanelSize.height),maxHeight)}}
 function readStoredPanelSize(){try{return JSON.parse(localStorage.getItem(PANEL_STORAGE_KEY)||'{}')}catch(error){console.error('Failed to read saved panel size.',error);return{}}}
 function loadPanelSize(){return clampPanelSize(readStoredPanelSize())}
 function savePanelSize(){try{localStorage.setItem(PANEL_STORAGE_KEY,JSON.stringify(panelSize))}catch(error){console.error('Failed to save panel size.',error)}}

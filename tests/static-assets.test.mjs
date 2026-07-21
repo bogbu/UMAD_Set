@@ -38,7 +38,7 @@ assert.equal(files.source.includes('<select data-setting-preset>'), false, 'sour
 assert.equal(files.rootApp.includes('class="preset-option'), true, 'root app should render preset options as stable buttons');
 assert.equal(files.dist.includes('class="preset-option'), true, 'dist app should render preset options as stable buttons');
 assert.equal(files.rootStyles.includes('preset-option'), true, 'root styles should style preset option buttons');
-assert.equal(files.distIndex.includes('settings-28'), true, 'dist index should reference settings-28 assets');
+assert.equal(files.distIndex.includes('settings-30'), true, 'dist index should reference settings-30 assets');
 
 
 const requiredActionStyleSymbols = [
@@ -58,8 +58,8 @@ for (const symbol of requiredActionStyleSymbols) {
 const versionedFiles = Object.entries(files).filter(([name]) => !name.toLowerCase().includes('styles'));
 
 for (const [name, content] of versionedFiles) {
-  assert.match(content, /settings-28/, `${name} should reference the current settings-28 asset version`);
-  assert.equal(content.includes('settings-27'), false, `${name} should not reference stale settings-27 assets`);
+  assert.match(content, /settings-30/, `${name} should reference the current settings-30 asset version`);
+  assert.equal(content.includes('settings-29'), false, `${name} should not reference stale settings-29 assets`);
   assert.equal(content.includes('resize-22'), false, `${name} should not reference stale resize-22 assets`);
   assert.equal(content.includes('resize-21'), false, `${name} should not reference stale resize-21 assets`);
   assert.equal(content.includes('resize-20'), false, `${name} should not reference stale resize-20 assets`);
